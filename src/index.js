@@ -10,14 +10,21 @@ const logger = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
 const validateRequest = require('./middleware/requestValidator');
 const cors = require('./middleware/cors');
+const headers = require('./middleware/headers');
 
 // 1. CORS中间件（必须在其他中间件之前）
 app.use(cors());
 
-// 2. 日志中间件
+// 2. 安全头部中间件
+app.use(headers.security);
+
+// 3. 请求追踪中间件
+app.use(headers.requestTracking);
+
+// 4. 日志中间件
 app.use(logger);
 
-// 3. 基础解析中间件
+// 5. 基础解析中间件
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -42,16 +49,21 @@ app.get('/', (req, res) => {
   res.json({
     message: '欢迎来到Node.js后端开发教程',
     version: '1.0.0',
-    stage: '阶段三：路由设计与参数处理',
+    stage: '阶段四：HTTP头部与状态码处理',
     features: {
       middleware: '中间件系统',
       routing: 'RESTful路由设计',
       validation: '参数验证',
       pagination: '分页查询',
       filtering: '条件过滤',
-      sorting: '排序功能'
+      sorting: '排序功能',
+      httpHeaders: 'HTTP头部处理',
+      statusCodes: '语义化状态码',
+      security: '安全头部',
+      caching: '缓存控制'
     },
     apiEndpoint: '/api',
+    demoEndpoint: '/api/demo',
     documentation: 'https://github.com/back-tutor/node-backend-tutorial'
   });
 });

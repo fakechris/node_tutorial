@@ -5,6 +5,7 @@ const router = express.Router();
 // 导入各个路由模块
 const usersRouter = require('./users');
 const postsRouter = require('./posts');
+const demoRouter = require('./demo');
 
 // API信息路由
 router.get('/', (req, res) => {
@@ -12,7 +13,7 @@ router.get('/', (req, res) => {
     status: 'success',
     message: 'Node.js后端开发教程 - API接口',
     version: '1.0.0',
-    stage: '阶段三：路由设计与参数处理',
+    stage: '阶段四：HTTP头部与状态码处理',
     endpoints: {
       users: {
         'GET /api/users': '获取用户列表（支持分页、过滤、搜索）',
@@ -30,6 +31,12 @@ router.get('/', (req, res) => {
         'DELETE /api/posts/:id': '删除文章',
         'GET /api/posts/:postId/comments': '获取文章评论',
         'POST /api/posts/:postId/comments': '创建文章评论'
+      },
+      demo: {
+        'GET /api/demo/status-codes': 'HTTP状态码演示',
+        'GET /api/demo/headers-demo': 'HTTP头部演示',
+        'GET /api/demo/status/*': '各种状态码示例',
+        'GET /api/demo/headers/*': '各种头部设置示例'
       }
     },
     features: {
@@ -38,7 +45,12 @@ router.get('/', (req, res) => {
       sorting: '排序功能支持',
       validation: '参数验证支持',
       errorHandling: '统一错误处理',
-      nestedResources: '嵌套资源路由'
+      nestedResources: '嵌套资源路由',
+      httpHeaders: 'HTTP头部处理',
+      statusCodes: '语义化状态码',
+      contentNegotiation: '内容协商',
+      caching: '缓存控制',
+      security: '安全头部'
     },
     documentation: 'https://github.com/back-tutor/node-backend-tutorial',
     timestamp: new Date().toISOString()
@@ -64,5 +76,6 @@ router.get('/stats', (req, res) => {
 // 挂载子路由
 router.use('/users', usersRouter);
 router.use('/posts', postsRouter);
+router.use('/demo', demoRouter);
 
 module.exports = router;
