@@ -13,11 +13,14 @@ This is the `back_tutor` repository - currently a new project in its initial set
 - 完成阶段二：中间件开发与实践
 - 完成阶段三：路由设计与参数处理
 - 完成阶段四：HTTP头部与状态码处理
+- 完成阶段五：JWT认证与权限控制
 - 实现完整的RESTful API设计，支持CRUD操作
 - 支持分页、过滤、排序等高级查询功能
 - 实现嵌套资源路由（文章-评论关系）
 - 添加安全头部和语义化HTTP状态码
 - 支持缓存控制、内容协商、条件请求
+- 实现JWT认证系统和基于角色的权限控制
+- 使用bcrypt进行密码安全存储
 
 ## Development Workflow
 
@@ -54,16 +57,24 @@ curl http://localhost:3000/api/posts
 curl "http://localhost:3000/api/posts?status=published&sortBy=title"
 curl http://localhost:3000/api/posts/1/comments
 
+# 测试JWT认证系统
+curl http://localhost:3000/api/auth/info
+curl -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+curl -X POST http://localhost:3000/api/auth/register -H "Content-Type: application/json" \
+  -d '{"username":"newuser","email":"new@test.com","password":"password123"}'
+
+# 测试受保护的路由（需要先登录获取token）
+# TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
+#   -H "Content-Type: application/json" \
+#   -d '{"username":"admin","password":"admin123"}' | \
+#   grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+# curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/auth/profile
+
 # 测试HTTP状态码演示
 curl http://localhost:3000/api/demo/status-codes
 curl -i http://localhost:3000/api/demo/status/200
 curl -i http://localhost:3000/api/demo/status/404
-curl -i http://localhost:3000/api/demo/status/429
-
-# 测试HTTP头部功能
-curl -i http://localhost:3000/api/demo/headers/security
-curl -i http://localhost:3000/api/demo/headers/cache
-curl -i -H "Accept: text/plain" http://localhost:3000/api/demo/headers/content-negotiation
 
 # 测试错误处理
 curl http://localhost:3000/api/users/999

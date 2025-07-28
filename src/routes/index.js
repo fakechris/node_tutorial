@@ -6,6 +6,7 @@ const router = express.Router();
 const usersRouter = require('./users');
 const postsRouter = require('./posts');
 const demoRouter = require('./demo');
+const authRouter = require('./auth');
 
 // API信息路由
 router.get('/', (req, res) => {
@@ -13,7 +14,7 @@ router.get('/', (req, res) => {
     status: 'success',
     message: 'Node.js后端开发教程 - API接口',
     version: '1.0.0',
-    stage: '阶段四：HTTP头部与状态码处理',
+    stage: '阶段五：JWT认证与权限控制',
     endpoints: {
       users: {
         'GET /api/users': '获取用户列表（支持分页、过滤、搜索）',
@@ -37,6 +38,16 @@ router.get('/', (req, res) => {
         'GET /api/demo/headers-demo': 'HTTP头部演示',
         'GET /api/demo/status/*': '各种状态码示例',
         'GET /api/demo/headers/*': '各种头部设置示例'
+      },
+      auth: {
+        'POST /api/auth/register': '用户注册',
+        'POST /api/auth/login': '用户登录',
+        'GET /api/auth/profile': '获取用户信息（需认证）',
+        'PUT /api/auth/profile': '更新用户资料（需认证）',
+        'POST /api/auth/refresh': '刷新令牌（需认证）',
+        'POST /api/auth/logout': '用户登出（需认证）',
+        'GET /api/auth/users': '获取所有用户（管理员）',
+        'GET /api/auth/demo/*': '权限演示端点'
       }
     },
     features: {
@@ -50,7 +61,11 @@ router.get('/', (req, res) => {
       statusCodes: '语义化状态码',
       contentNegotiation: '内容协商',
       caching: '缓存控制',
-      security: '安全头部'
+      security: '安全头部',
+      authentication: 'JWT认证系统',
+      authorization: '基于角色的权限控制',
+      passwordHashing: '密码安全存储',
+      tokenManagement: '令牌生成与验证'
     },
     documentation: 'https://github.com/back-tutor/node-backend-tutorial',
     timestamp: new Date().toISOString()
@@ -77,5 +92,6 @@ router.get('/stats', (req, res) => {
 router.use('/users', usersRouter);
 router.use('/posts', postsRouter);
 router.use('/demo', demoRouter);
+router.use('/auth', authRouter);
 
 module.exports = router;
