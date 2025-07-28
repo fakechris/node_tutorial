@@ -1,0 +1,26 @@
+{
+  "name": "node-backend-tutorial",
+  "version": "1.0.0",
+  "description": "Node.js后端开发实战教程",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"暂无测试\" && exit 1"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "backend",
+    "tutorial"
+  ],
+  "author": "Back Tutor",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
