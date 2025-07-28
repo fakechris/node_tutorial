@@ -49,7 +49,7 @@ app.get('/', (req, res) => {
   res.json({
     message: '欢迎来到Node.js后端开发教程',
     version: '1.0.0',
-    stage: '阶段五：JWT认证与权限控制',
+    stage: '阶段六：数据库ORM与CRUD操作',
     features: {
       middleware: '中间件系统',
       routing: 'RESTful路由设计',
@@ -63,11 +63,14 @@ app.get('/', (req, res) => {
       caching: '缓存控制',
       authentication: 'JWT认证系统',
       authorization: '基于角色的权限控制',
-      passwordSecurity: '密码加密存储'
+      passwordSecurity: '密码加密存储',
+      database: 'Sequelize ORM集成',
+      dataModeling: '数据模型和关联关系'
     },
     apiEndpoint: '/api',
     authEndpoint: '/api/auth',
     demoEndpoint: '/api/demo',
+    databaseEndpoint: '/api/db',
     documentation: 'https://github.com/back-tutor/node-backend-tutorial'
   });
 });

@@ -1,38 +1,11 @@
-// 阶段三：文章路由模块（演示嵌套资源）
+// 阶段六：文章路由模块（集成数据库）
 const express = require('express');
 const router = express.Router();
+const postController = require('../controllers/postController');
+const auth = require('../middleware/auth');
 const validateRequest = require('../middleware/requestValidator');
 
-// 模拟文章数据
-let posts = [
-  { 
-    id: 1, 
-    title: '学习Node.js', 
-    content: '这是一篇关于Node.js的文章...', 
-    authorId: 1,
-    tags: ['nodejs', 'javascript'],
-    status: 'published',
-    createdAt: '2024-01-01T00:00:00.000Z' 
-  },
-  { 
-    id: 2, 
-    title: 'Express.js最佳实践', 
-    content: '这是一篇关于Express.js的文章...', 
-    authorId: 2,
-    tags: ['express', 'nodejs'],
-    status: 'draft',
-    createdAt: '2024-01-02T00:00:00.000Z' 
-  }
-];
-
-// 模拟评论数据
-let comments = [
-  { id: 1, postId: 1, content: '很好的文章！', authorId: 2, createdAt: '2024-01-01T01:00:00.000Z' },
-  { id: 2, postId: 1, content: '学到了很多', authorId: 3, createdAt: '2024-01-01T02:00:00.000Z' },
-  { id: 3, postId: 2, content: '期待更多内容', authorId: 1, createdAt: '2024-01-02T01:00:00.000Z' }
-];
-
-// 参数验证中间件
+// 路由级中间件：文章ID验证
 const validatePostId = (req, res, next) => {
   const postId = parseInt(req.params.id || req.params.postId);
   if (isNaN(postId) || postId <= 0) {
@@ -42,316 +15,282 @@ const validatePostId = (req, res, next) => {
       timestamp: new Date().toISOString()
     });
   }
-  req.postId = postId;
+  req.params.id = postId;
+  req.params.postId = postId;
   next();
 };
 
-const checkPostExists = (req, res, next) => {
-  const post = posts.find(p => p.id === req.postId);
-  if (!post) {
-    return res.status(404).json({
-      status: 'error',
-      message: `文章ID ${req.postId} 不存在`,
-      timestamp: new Date().toISOString()
-    });
+// GET /api/posts - 获取文章列表（支持分页、搜索、过滤、排序）
+// 公开访问，但返回不同的内容基于用户权限
+router.get('/', (req, res, next) => {
+  // 如果用户未登录，只显示已发布的文章
+  if (!req.user) {
+    req.query.status = 'published';
   }
-  req.post = post;
   next();
-};
+}, postController.getPosts);
 
-// GET /api/posts - 获取文章列表
-router.get('/', (req, res) => {
-  const { 
-    page = 1, 
-    limit = 10, 
-    status, 
-    authorId, 
-    tag,
-    sortBy = 'createdAt',
-    sortOrder = 'desc'
-  } = req.query;
-  
-  // 参数验证
-  const pageNum = parseInt(page);
-  const limitNum = parseInt(limit);
-  
-  if (isNaN(pageNum) || pageNum < 1) {
-    return res.status(400).json({
-      status: 'error',
-      message: 'page参数必须是大于0的整数'
-    });
-  }
-  
-  if (isNaN(limitNum) || limitNum < 1 || limitNum > 50) {
-    return res.status(400).json({
-      status: 'error',
-      message: 'limit参数必须是1-50之间的整数'
-    });
-  }
-  
-  // 验证排序参数
-  const validSortFields = ['createdAt', 'title', 'id'];
-  const validSortOrders = ['asc', 'desc'];
-  
-  if (!validSortFields.includes(sortBy)) {
-    return res.status(400).json({
-      status: 'error',
-      message: `sortBy必须是以下之一: ${validSortFields.join(', ')}`
-    });
-  }
-  
-  if (!validSortOrders.includes(sortOrder)) {
-    return res.status(400).json({
-      status: 'error',
-      message: `sortOrder必须是以下之一: ${validSortOrders.join(', ')}`
-    });
-  }
-  
-  // 过滤数据
-  let filteredPosts = [...posts];
-  
-  // 按状态过滤
-  if (status) {
-    filteredPosts = filteredPosts.filter(post => post.status === status);
-  }
-  
-  // 按作者过滤
-  if (authorId) {
-    const authorIdNum = parseInt(authorId);
-    if (!isNaN(authorIdNum)) {
-      filteredPosts = filteredPosts.filter(post => post.authorId === authorIdNum);
-    }
-  }
-  
-  // 按标签过滤
-  if (tag) {
-    filteredPosts = filteredPosts.filter(post => 
-      post.tags && post.tags.includes(tag)
-    );
-  }
-  
-  // 排序
-  filteredPosts.sort((a, b) => {
-    let comparison = 0;
-    if (sortBy === 'createdAt') {
-      comparison = new Date(a[sortBy]).getTime() - new Date(b[sortBy]).getTime();
-    } else {
-      comparison = a[sortBy] > b[sortBy] ? 1 : -1;
-    }
-    return sortOrder === 'desc' ? -comparison : comparison;
-  });
-  
-  // 分页
-  const total = filteredPosts.length;
-  const startIndex = (pageNum - 1) * limitNum;
-  const paginatedPosts = filteredPosts.slice(startIndex, startIndex + limitNum);
-  
-  res.json({
-    status: 'success',
-    data: {
-      posts: paginatedPosts,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total: total,
-        totalPages: Math.ceil(total / limitNum)
+// GET /api/posts/:id - 获取单篇文章详情
+// 公开访问，但权限检查在controller中处理
+router.get('/:id', 
+  validatePostId,
+  postController.getPostById
+);
+
+// POST /api/posts - 创建新文章（需要认证）
+router.post('/', 
+  auth.authenticate,
+  validateRequest({
+    body: {
+      title: { 
+        required: true, 
+        type: 'string', 
+        minLength: 1, 
+        maxLength: 200
       },
-      filters: { status, authorId, tag },
-      sorting: { sortBy, sortOrder }
-    },
-    timestamp: new Date().toISOString()
-  });
-});
+      content: { 
+        required: true, 
+        type: 'string', 
+        minLength: 1
+      },
+      summary: {
+        required: false,
+        type: 'string',
+        maxLength: 500
+      },
+      categoryId: {
+        required: false,
+        type: 'number'
+      },
+      tags: {
+        required: false,
+        type: 'array'
+      },
+      status: {
+        required: false,
+        type: 'string'
+      },
+      allowComments: {
+        required: false,
+        type: 'boolean'
+      },
+      publishNow: {
+        required: false,
+        type: 'boolean'
+      }
+    }
+  }), 
+  postController.createPost
+);
 
-// GET /api/posts/:id - 获取单篇文章
-router.get('/:id', validatePostId, checkPostExists, (req, res) => {
-  // 获取文章的评论数量
-  const commentCount = comments.filter(c => c.postId === req.postId).length;
-  
-  res.json({
-    status: 'success',
-    data: {
-      ...req.post,
-      commentCount
-    },
-    timestamp: new Date().toISOString()
-  });
-});
+// PUT /api/posts/:id - 更新文章（需要认证和权限检查）
+router.put('/:id', 
+  validatePostId,
+  auth.authenticate,
+  validateRequest({
+    body: {
+      title: { 
+        required: false, 
+        type: 'string', 
+        minLength: 1, 
+        maxLength: 200
+      },
+      content: { 
+        required: false, 
+        type: 'string', 
+        minLength: 1
+      },
+      summary: {
+        required: false,
+        type: 'string',
+        maxLength: 500
+      },
+      categoryId: {
+        required: false,
+        type: 'number'
+      },
+      tags: {
+        required: false,
+        type: 'array'
+      },
+      status: {
+        required: false,
+        type: 'string'
+      },
+      allowComments: {
+        required: false,
+        type: 'boolean'
+      },
+      publishNow: {
+        required: false,
+        type: 'boolean'
+      }
+    }
+  }), 
+  postController.updatePost
+);
 
-// POST /api/posts - 创建新文章
-router.post('/', validateRequest({
-  body: {
-    title: { required: true, type: 'string', minLength: 1, maxLength: 200 },
-    content: { required: true, type: 'string', minLength: 1 },
-    authorId: { required: true, type: 'number' },
-    tags: { required: false, type: 'object' },
-    status: { required: false, type: 'string' }
-  }
-}), (req, res) => {
-  const { title, content, authorId, tags = [], status = 'draft' } = req.body;
-  
-  // 验证状态
-  const validStatuses = ['draft', 'published', 'archived'];
-  if (!validStatuses.includes(status)) {
-    return res.status(400).json({
-      status: 'error',
-      message: `状态必须是以下之一: ${validStatuses.join(', ')}`
-    });
-  }
-  
-  // 验证标签格式
-  if (tags && !Array.isArray(tags)) {
-    return res.status(400).json({
-      status: 'error',
-      message: '标签必须是数组格式'
-    });
-  }
-  
-  const newPost = {
-    id: Math.max(...posts.map(p => p.id), 0) + 1,
-    title,
-    content,
-    authorId,
-    tags: tags || [],
-    status,
-    createdAt: new Date().toISOString()
-  };
-  
-  posts.push(newPost);
-  
-  res.status(201).json({
-    status: 'success',
-    message: '文章创建成功',
-    data: newPost,
-    timestamp: new Date().toISOString()
-  });
-});
+// DELETE /api/posts/:id - 删除文章（需要认证和权限检查）
+router.delete('/:id', 
+  validatePostId,
+  auth.authenticate,
+  postController.deletePost
+);
 
-// PUT /api/posts/:id - 更新文章
-router.put('/:id', validatePostId, checkPostExists, validateRequest({
-  body: {
-    title: { required: false, type: 'string', minLength: 1, maxLength: 200 },
-    content: { required: false, type: 'string', minLength: 1 },
-    tags: { required: false, type: 'object' },
-    status: { required: false, type: 'string' }
-  }
-}), (req, res) => {
-  const { title, content, tags, status } = req.body;
-  
-  if (status) {
-    const validStatuses = ['draft', 'published', 'archived'];
-    if (!validStatuses.includes(status)) {
+// POST /api/posts/:id/restore - 恢复已删除的文章（需要认证和权限检查）
+router.post('/:id/restore', 
+  validatePostId,
+  auth.authenticate,
+  postController.restorePost
+);
+
+// POST /api/posts/:id/publish - 发布文章（需要认证和权限检查）
+router.post('/:id/publish', 
+  validatePostId,
+  auth.authenticate,
+  postController.publishPost
+);
+
+// POST /api/posts/:id/unpublish - 取消发布文章（需要认证和权限检查）
+router.post('/:id/unpublish', 
+  validatePostId,
+  auth.authenticate,
+  postController.unpublishPost
+);
+
+// POST /api/posts/:id/like - 点赞文章
+router.post('/:id/like', 
+  validatePostId,
+  postController.likePost
+);
+
+// GET /api/posts/:id/stats - 获取文章统计信息
+router.get('/:id/stats', 
+  validatePostId,
+  auth.authenticate,
+  auth.authorize(['admin', 'moderator']),
+  postController.getPostStats
+);
+
+// POST /api/posts/batch - 批量操作文章（需要认证）
+router.post('/batch', 
+  auth.authenticate,
+  validateRequest({
+    body: {
+      operation: {
+        required: true,
+        type: 'string'
+      },
+      postIds: {
+        required: true,
+        type: 'array',
+        minItems: 1
+      },
+      data: {
+        required: false,
+        type: 'object'
+      }
+    }
+  }),
+  postController.batchOperation
+);
+
+// ===== 嵌套资源：文章评论路由 =====
+
+// 导入评论控制器（将在下一步创建）
+const commentController = require('../controllers/commentController');
+
+// GET /api/posts/:postId/comments - 获取文章的评论列表
+router.get('/:postId/comments', 
+  validatePostId,
+  commentController.getCommentsByPost
+);
+
+// POST /api/posts/:postId/comments - 为文章创建评论
+router.post('/:postId/comments', 
+  validatePostId,
+  auth.authenticate,
+  validateRequest({
+    body: {
+      content: { 
+        required: true, 
+        type: 'string', 
+        minLength: 1,
+        maxLength: 1000
+      },
+      parentId: {
+        required: false,
+        type: 'number'
+      }
+    }
+  }),
+  commentController.createComment
+);
+
+// GET /api/posts/:postId/comments/:commentId - 获取特定评论详情
+router.get('/:postId/comments/:commentId', 
+  validatePostId,
+  (req, res, next) => {
+    const commentId = parseInt(req.params.commentId);
+    if (isNaN(commentId) || commentId <= 0) {
       return res.status(400).json({
         status: 'error',
-        message: `状态必须是以下之一: ${validStatuses.join(', ')}`
+        message: '评论ID必须是正整数',
+        timestamp: new Date().toISOString()
       });
     }
-  }
-  
-  if (tags && !Array.isArray(tags)) {
-    return res.status(400).json({
-      status: 'error',
-      message: '标签必须是数组格式'
-    });
-  }
-  
-  const postIndex = posts.findIndex(p => p.id === req.postId);
-  posts[postIndex] = {
-    ...posts[postIndex],
-    ...(title && { title }),
-    ...(content && { content }),
-    ...(tags && { tags }),
-    ...(status && { status }),
-    updatedAt: new Date().toISOString()
-  };
-  
-  res.json({
-    status: 'success',
-    message: '文章更新成功',
-    data: posts[postIndex],
-    timestamp: new Date().toISOString()
-  });
-});
+    req.params.commentId = commentId;
+    next();
+  },
+  commentController.getCommentById
+);
 
-// DELETE /api/posts/:id - 删除文章
-router.delete('/:id', validatePostId, checkPostExists, (req, res) => {
-  const postIndex = posts.findIndex(p => p.id === req.postId);
-  const deletedPost = posts.splice(postIndex, 1)[0];
-  
-  // 同时删除相关评论
-  const deletedComments = comments.filter(c => c.postId === req.postId);
-  comments = comments.filter(c => c.postId !== req.postId);
-  
-  res.json({
-    status: 'success',
-    message: '文章删除成功',
-    data: {
-      post: deletedPost,
-      deletedCommentsCount: deletedComments.length
-    },
-    timestamp: new Date().toISOString()
-  });
-});
-
-// =======嵌套资源路由：文章评论=======
-
-// GET /api/posts/:postId/comments - 获取文章评论
-router.get('/:postId/comments', validatePostId, checkPostExists, (req, res) => {
-  const { page = 1, limit = 20 } = req.query;
-  const pageNum = parseInt(page);
-  const limitNum = parseInt(limit);
-  
-  const postComments = comments.filter(c => c.postId === req.postId);
-  
-  // 分页
-  const total = postComments.length;
-  const startIndex = (pageNum - 1) * limitNum;
-  const paginatedComments = postComments.slice(startIndex, startIndex + limitNum);
-  
-  res.json({
-    status: 'success',
-    data: {
-      comments: paginatedComments,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total: total,
-        totalPages: Math.ceil(total / limitNum)
-      },
-      postInfo: {
-        id: req.post.id,
-        title: req.post.title
+// PUT /api/posts/:postId/comments/:commentId - 更新评论
+router.put('/:postId/comments/:commentId', 
+  validatePostId,
+  (req, res, next) => {
+    const commentId = parseInt(req.params.commentId);
+    if (isNaN(commentId) || commentId <= 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: '评论ID必须是正整数',
+        timestamp: new Date().toISOString()
+      });
+    }
+    req.params.commentId = commentId;
+    next();
+  },
+  auth.authenticate,
+  validateRequest({
+    body: {
+      content: { 
+        required: true, 
+        type: 'string', 
+        minLength: 1,
+        maxLength: 1000
       }
-    },
-    timestamp: new Date().toISOString()
-  });
-});
+    }
+  }),
+  commentController.updateComment
+);
 
-// POST /api/posts/:postId/comments - 创建文章评论
-router.post('/:postId/comments', validatePostId, checkPostExists, validateRequest({
-  body: {
-    content: { required: true, type: 'string', minLength: 1, maxLength: 1000 },
-    authorId: { required: true, type: 'number' }
-  }
-}), (req, res) => {
-  const { content, authorId } = req.body;
-  
-  const newComment = {
-    id: Math.max(...comments.map(c => c.id), 0) + 1,
-    postId: req.postId,
-    content,
-    authorId,
-    createdAt: new Date().toISOString()
-  };
-  
-  comments.push(newComment);
-  
-  res.status(201).json({
-    status: 'success',
-    message: '评论创建成功',
-    data: newComment,
-    timestamp: new Date().toISOString()
-  });
-});
+// DELETE /api/posts/:postId/comments/:commentId - 删除评论
+router.delete('/:postId/comments/:commentId', 
+  validatePostId,
+  (req, res, next) => {
+    const commentId = parseInt(req.params.commentId);
+    if (isNaN(commentId) || commentId <= 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: '评论ID必须是正整数',
+        timestamp: new Date().toISOString()
+      });
+    }
+    req.params.commentId = commentId;
+    next();
+  },
+  auth.authenticate,
+  commentController.deleteComment
+);
 
 module.exports = router;
