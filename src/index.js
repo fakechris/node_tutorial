@@ -1,15 +1,25 @@
-// 阶段一：项目初始化与框架搭建
+// 阶段二：中间件开发与实践
 // 加载环境变量
 require('dotenv').config();
 
 const express = require('express');
 const app = express();
 
-// 基础中间件：解析JSON请求体
-app.use(express.json());
+// 导入自定义中间件
+const logger = require('./middleware/logger');
+const errorHandler = require('./middleware/errorHandler');
+const validateRequest = require('./middleware/requestValidator');
+const cors = require('./middleware/cors');
 
-// 基础中间件：解析URL编码请求体
-app.use(express.urlencoded({ extended: true }));
+// 1. CORS中间件（必须在其他中间件之前）
+app.use(cors());
+
+// 2. 日志中间件
+app.use(logger);
+
+// 3. 基础解析中间件
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // 健康检查路由
 app.get('/health', (req, res) => {
@@ -26,9 +36,50 @@ app.get('/', (req, res) => {
   res.json({
     message: '欢迎来到Node.js后端开发教程',
     version: '1.0.0',
-    stage: '阶段一：项目初始化与框架搭建',
+    stage: '阶段二：中间件开发与实践',
+    middleware: {
+      logger: '自定义日志中间件',
+      cors: 'CORS跨域处理',
+      errorHandler: '统一错误处理',
+      validator: '请求参数验证'
+    },
     documentation: 'https://github.com/back-tutor/node-backend-tutorial'
   });
+});
+
+// 测试中间件的演示路由
+app.post('/api/test/validation', validateRequest({
+  body: {
+    username: { required: true, type: 'string', minLength: 3, maxLength: 20 },
+    email: { required: true, type: 'string', pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
+    age: { required: false, type: 'number' }
+  }
+}), (req, res) => {
+  res.json({
+    status: 'success',
+    message: '参数验证通过',
+    data: req.body,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 测试错误处理的路由
+app.get('/api/test/error', (req, res, next) => {
+  const error = new Error('这是一个测试错误');
+  error.name = 'TestError';
+  next(error);
+});
+
+// 测试异步错误
+app.get('/api/test/async-error', async (req, res, next) => {
+  try {
+    // 模拟异步操作错误
+    await new Promise((resolve, reject) => {
+      setTimeout(() => reject(new Error('异步操作失败')), 100);
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // 404处理
@@ -40,15 +91,8 @@ app.use('*', (req, res) => {
   });
 });
 
-// 全局错误处理
-app.use((err, req, res, next) => {
-  console.error('服务器错误:', err.stack);
-  res.status(500).json({
-    status: 'error',
-    message: '服务器内部错误',
-    timestamp: new Date().toISOString()
-  });
-});
+// 全局错误处理中间件（必须放在最后）
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
