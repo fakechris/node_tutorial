@@ -11,7 +11,10 @@ This is the `back_tutor` repository - currently a new project in its initial set
 - Express.js 4.19.2 框架已配置
 - 完成阶段一：项目初始化与框架搭建
 - 完成阶段二：中间件开发与实践
-- 自定义中间件已实现：日志记录、错误处理、参数验证、CORS
+- 完成阶段三：路由设计与参数处理
+- 实现完整的RESTful API设计，支持CRUD操作
+- 支持分页、过滤、排序等高级查询功能
+- 实现嵌套资源路由（文章-评论关系）
 
 ## Development Workflow
 
@@ -37,12 +40,19 @@ curl http://localhost:3000/
 # 测试健康检查
 curl http://localhost:3000/health
 
-# 测试参数验证
-curl -X POST http://localhost:3000/api/test/validation \
-  -H "Content-Type: application/json" \
-  -d '{"username":"testuser","email":"test@example.com"}'
+# 测试用户API
+curl http://localhost:3000/api/users
+curl "http://localhost:3000/api/users?role=admin&limit=2"
+curl -X POST http://localhost:3000/api/users -H "Content-Type: application/json" \
+  -d '{"username":"newuser","email":"new@example.com"}'
+
+# 测试文章API
+curl http://localhost:3000/api/posts
+curl "http://localhost:3000/api/posts?status=published&sortBy=title"
+curl http://localhost:3000/api/posts/1/comments
 
 # 测试错误处理
+curl http://localhost:3000/api/users/999
 curl http://localhost:3000/api/test/error
 ```
 

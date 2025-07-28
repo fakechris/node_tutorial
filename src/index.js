@@ -31,18 +31,27 @@ app.get('/health', (req, res) => {
   });
 });
 
+// 导入路由模块
+const apiRoutes = require('./routes/index');
+
+// 挂载API路由
+app.use('/api', apiRoutes);
+
 // 根路由
 app.get('/', (req, res) => {
   res.json({
     message: '欢迎来到Node.js后端开发教程',
     version: '1.0.0',
-    stage: '阶段二：中间件开发与实践',
-    middleware: {
-      logger: '自定义日志中间件',
-      cors: 'CORS跨域处理',
-      errorHandler: '统一错误处理',
-      validator: '请求参数验证'
+    stage: '阶段三：路由设计与参数处理',
+    features: {
+      middleware: '中间件系统',
+      routing: 'RESTful路由设计',
+      validation: '参数验证',
+      pagination: '分页查询',
+      filtering: '条件过滤',
+      sorting: '排序功能'
     },
+    apiEndpoint: '/api',
     documentation: 'https://github.com/back-tutor/node-backend-tutorial'
   });
 });
