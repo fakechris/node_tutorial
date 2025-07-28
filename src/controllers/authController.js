@@ -8,7 +8,7 @@ let users = [
     id: 1, 
     username: 'admin', 
     email: 'admin@example.com', 
-    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LCJksb6df1cw0.W3O', // 密码: admin123
+    password: '$2b$12$s1zhD9RK2b8JUD/jyJLSfO232EjPSl4njJpCsPxpu1hHVfjW9Tw7.', // 密码: admin123
     role: 'admin', 
     createdAt: '2024-01-01T00:00:00.000Z',
     lastLoginAt: null,
@@ -18,7 +18,7 @@ let users = [
     id: 2, 
     username: 'user1', 
     email: 'user1@example.com', 
-    password: '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // 密码: password123
+    password: '$2b$12$092UBOyxRvcCGAcwPf7iYunkO.71LaIrhJNGOJp.8o3/SzzzD0lB.', // 密码: password123
     role: 'user', 
     createdAt: '2024-01-02T00:00:00.000Z',
     lastLoginAt: null,
@@ -28,7 +28,7 @@ let users = [
     id: 3, 
     username: 'moderator', 
     email: 'mod@example.com', 
-    password: '$2a$12$6BEXzElFGDie7EKYs8EKNe1TLk0/EHzISjHgHDzQd4s0rYoMtMKkW', // 密码: mod123
+    password: '$2b$12$a1powuUxq1R2Npu98C01XO3.mwZOYLlzqrE9nUPu5Wol.kwuSMoP2', // 密码: mod123
     role: 'moderator', 
     createdAt: '2024-01-03T00:00:00.000Z',
     lastLoginAt: null,

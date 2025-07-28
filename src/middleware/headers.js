@@ -140,7 +140,6 @@ const headers = {
     
     // 设置响应头
     res.header('X-Request-ID', requestId);
-    res.header('X-Response-Time', Date.now().toString());
     
     // 保存到请求对象中
     req.requestId = requestId;
@@ -148,10 +147,32 @@ const headers = {
     // 计算响应时间
     const startTime = Date.now();
     
-    res.on('finish', () => {
+    // 重写响应方法来设置响应时间
+    const originalSend = res.send;
+    const originalJson = res.json;
+    const originalEnd = res.end;
+    
+    const setResponseTime = () => {
       const duration = Date.now() - startTime;
-      res.header('X-Response-Time', `${duration}ms`);
-    });
+      if (!res.headersSent) {
+        res.header('X-Response-Time', `${duration}ms`);
+      }
+    };
+    
+    res.send = function(data) {
+      setResponseTime();
+      return originalSend.call(this, data);
+    };
+    
+    res.json = function(data) {
+      setResponseTime();
+      return originalJson.call(this, data);
+    };
+    
+    res.end = function(data) {
+      setResponseTime();
+      return originalEnd.call(this, data);
+    };
     
     next();
   },
