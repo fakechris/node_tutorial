@@ -14,7 +14,7 @@ const userController = {
         status,
         search,
         sortBy = 'createdAt',
-        sortOrder = 'DESC'
+        sortOrder = 'DESC',
       } = req.query;
 
       // 构建查询条件
@@ -33,15 +33,15 @@ const userController = {
           { username: { [Op.like]: `%${search}%` } },
           { email: { [Op.like]: `%${search}%` } },
           { firstName: { [Op.like]: `%${search}%` } },
-          { lastName: { [Op.like]: `%${search}%` } }
+          { lastName: { [Op.like]: `%${search}%` } },
         ];
       }
 
       // 验证排序字段
       const validSortFields = ['createdAt', 'updatedAt', 'username', 'email', 'role'];
       const actualSortBy = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
-      const actualSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) 
-        ? sortOrder.toUpperCase() 
+      const actualSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase())
+        ? sortOrder.toUpperCase()
         : 'DESC';
 
       // 分页参数
@@ -61,15 +61,15 @@ const userController = {
             model: Post,
             as: 'posts',
             attributes: ['id'],
-            required: false
+            required: false,
           },
           {
             model: Comment,
             as: 'comments',
             attributes: ['id'],
-            required: false
-          }
-        ]
+            required: false,
+          },
+        ],
       });
 
       // 处理用户数据
@@ -78,24 +78,27 @@ const userController = {
         return {
           ...userInfo,
           postsCount: user.posts ? user.posts.length : 0,
-          commentsCount: user.comments ? user.comments.length : 0
+          commentsCount: user.comments ? user.comments.length : 0,
         };
       });
 
-      statusCode.success.ok(res, {
-        users: processedUsers,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total: count,
-          totalPages: Math.ceil(count / limitNum),
-          hasNext: pageNum < Math.ceil(count / limitNum),
-          hasPrev: pageNum > 1
+      statusCode.success.ok(
+        res,
+        {
+          users: processedUsers,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: count,
+            totalPages: Math.ceil(count / limitNum),
+            hasNext: pageNum < Math.ceil(count / limitNum),
+            hasPrev: pageNum > 1,
+          },
+          filters: { role, status, search },
+          sorting: { sortBy: actualSortBy, sortOrder: actualSortOrder },
         },
-        filters: { role, status, search },
-        sorting: { sortBy: actualSortBy, sortOrder: actualSortOrder }
-      }, '获取用户列表成功');
-
+        '获取用户列表成功'
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '获取用户列表失败', error);
     }
@@ -109,22 +112,25 @@ const userController = {
 
       const user = await User.findByPk(id, {
         attributes: { exclude: ['password'] },
-        include: includeStats === 'true' ? [
-          {
-            model: Post,
-            as: 'posts',
-            attributes: ['id', 'title', 'status', 'createdAt', 'viewCount'],
-            limit: 5,
-            order: [['createdAt', 'DESC']]
-          },
-          {
-            model: Comment,
-            as: 'comments',
-            attributes: ['id', 'content', 'createdAt'],
-            limit: 5,
-            order: [['createdAt', 'DESC']]
-          }
-        ] : []
+        include:
+          includeStats === 'true'
+            ? [
+                {
+                  model: Post,
+                  as: 'posts',
+                  attributes: ['id', 'title', 'status', 'createdAt', 'viewCount'],
+                  limit: 5,
+                  order: [['createdAt', 'DESC']],
+                },
+                {
+                  model: Comment,
+                  as: 'comments',
+                  attributes: ['id', 'content', 'createdAt'],
+                  limit: 5,
+                  order: [['createdAt', 'DESC']],
+                },
+              ]
+            : [],
       });
 
       if (!user) {
@@ -132,7 +138,7 @@ const userController = {
       }
 
       const userInfo = user.getPublicInfo();
-      
+
       // 如果需要统计信息
       if (includeStats === 'true') {
         const stats = await user.getStats();
@@ -142,7 +148,6 @@ const userController = {
       }
 
       statusCode.success.ok(res, userInfo, '获取用户信息成功');
-
     } catch (error) {
       statusCode.serverError.internalError(res, '获取用户信息失败', error);
     }
@@ -159,17 +164,14 @@ const userController = {
         firstName,
         lastName,
         bio,
-        isActive = true
+        isActive = true,
       } = req.body;
 
       // 检查用户名和邮箱是否已存在
       const existingUser = await User.findOne({
         where: {
-          [Op.or]: [
-            { username },
-            { email }
-          ]
-        }
+          [Op.or]: [{ username }, { email }],
+        },
       });
 
       if (existingUser) {
@@ -179,7 +181,10 @@ const userController = {
       // 验证角色
       const validRoles = ['user', 'moderator', 'admin'];
       if (!validRoles.includes(role)) {
-        return statusCode.clientError.badRequest(res, `角色必须是以下之一: ${validRoles.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `角色必须是以下之一: ${validRoles.join(', ')}`
+        );
       }
 
       // 创建用户
@@ -191,18 +196,20 @@ const userController = {
         firstName: firstName || '',
         lastName: lastName || '',
         bio: bio || null,
-        isActive
+        isActive,
       });
 
       // 获取用户公开信息
       const userPublicInfo = newUser.getPublicInfo();
 
       statusCode.success.created(res, userPublicInfo, '用户创建成功');
-
     } catch (error) {
       if (error.name === 'SequelizeValidationError') {
         const validationErrors = error.errors.map(err => err.message);
-        return statusCode.clientError.badRequest(res, `数据验证失败: ${validationErrors.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `数据验证失败: ${validationErrors.join(', ')}`
+        );
       }
 
       if (error.name === 'SequelizeUniqueConstraintError') {
@@ -217,15 +224,7 @@ const userController = {
   updateUser: async (req, res) => {
     try {
       const { id } = req.params;
-      const {
-        username,
-        email,
-        role,
-        firstName,
-        lastName,
-        bio,
-        isActive
-      } = req.body;
+      const { username, email, role, firstName, lastName, bio, isActive } = req.body;
 
       const user = await User.findByPk(id);
       if (!user) {
@@ -239,13 +238,10 @@ const userController = {
             [Op.and]: [
               { id: { [Op.ne]: id } },
               {
-                [Op.or]: [
-                  { username: username || '' },
-                  { email: email || '' }
-                ]
-              }
-            ]
-          }
+                [Op.or]: [{ username: username || '' }, { email: email || '' }],
+              },
+            ],
+          },
         });
 
         if (existingUser) {
@@ -257,7 +253,10 @@ const userController = {
       if (role) {
         const validRoles = ['user', 'moderator', 'admin'];
         if (!validRoles.includes(role)) {
-          return statusCode.clientError.badRequest(res, `角色必须是以下之一: ${validRoles.join(', ')}`);
+          return statusCode.clientError.badRequest(
+            res,
+            `角色必须是以下之一: ${validRoles.join(', ')}`
+          );
         }
       }
 
@@ -279,11 +278,13 @@ const userController = {
       const userPublicInfo = user.getPublicInfo();
 
       statusCode.success.ok(res, userPublicInfo, '用户信息更新成功');
-
     } catch (error) {
       if (error.name === 'SequelizeValidationError') {
         const validationErrors = error.errors.map(err => err.message);
-        return statusCode.clientError.badRequest(res, `数据验证失败: ${validationErrors.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `数据验证失败: ${validationErrors.join(', ')}`
+        );
       }
 
       if (error.name === 'SequelizeUniqueConstraintError') {
@@ -319,7 +320,6 @@ const userController = {
         await user.destroy();
         statusCode.success.ok(res, null, '用户已删除');
       }
-
     } catch (error) {
       statusCode.serverError.internalError(res, '删除用户失败', error);
     }
@@ -343,7 +343,6 @@ const userController = {
 
       const userPublicInfo = user.getPublicInfo();
       statusCode.success.ok(res, userPublicInfo, '用户恢复成功');
-
     } catch (error) {
       statusCode.serverError.internalError(res, '恢复用户失败', error);
     }
@@ -368,11 +367,13 @@ const userController = {
       await user.update({ password: newPassword });
 
       statusCode.success.ok(res, null, '密码重置成功');
-
     } catch (error) {
       if (error.name === 'SequelizeValidationError') {
         const validationErrors = error.errors.map(err => err.message);
-        return statusCode.clientError.badRequest(res, `密码验证失败: ${validationErrors.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `密码验证失败: ${validationErrors.join(', ')}`
+        );
       }
 
       statusCode.serverError.internalError(res, '重置密码失败', error);
@@ -391,7 +392,6 @@ const userController = {
 
       const stats = await user.getStats();
       statusCode.success.ok(res, stats, '获取用户统计信息成功');
-
     } catch (error) {
       statusCode.serverError.internalError(res, '获取用户统计信息失败', error);
     }
@@ -408,7 +408,10 @@ const userController = {
 
       const validOperations = ['activate', 'deactivate', 'delete', 'changeRole'];
       if (!validOperations.includes(operation)) {
-        return statusCode.clientError.badRequest(res, `操作类型必须是以下之一: ${validOperations.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `操作类型必须是以下之一: ${validOperations.join(', ')}`
+        );
       }
 
       // 不能操作自己
@@ -464,20 +467,23 @@ const userController = {
       const successCount = results.filter(r => r.success).length;
       const failCount = results.length - successCount;
 
-      statusCode.success.ok(res, {
-        operation,
-        results,
-        summary: {
-          total: results.length,
-          success: successCount,
-          failed: failCount
-        }
-      }, `批量操作完成：成功 ${successCount} 个，失败 ${failCount} 个`);
-
+      statusCode.success.ok(
+        res,
+        {
+          operation,
+          results,
+          summary: {
+            total: results.length,
+            success: successCount,
+            failed: failCount,
+          },
+        },
+        `批量操作完成：成功 ${successCount} 个，失败 ${failCount} 个`
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '批量操作失败', error);
     }
-  }
+  },
 };
 
 module.exports = userController;

@@ -14,7 +14,7 @@ const commentController = {
         sortBy = 'createdAt',
         sortOrder = 'ASC',
         includeReplies = true,
-        onlyApproved = true
+        onlyApproved = true,
       } = req.query;
 
       // 验证文章存在性
@@ -26,7 +26,7 @@ const commentController = {
       // 构建查询条件
       const whereConditions = {
         postId: parseInt(postId),
-        parentId: null // 只获取顶级评论
+        parentId: null, // 只获取顶级评论
       };
 
       // 是否只显示已审核的评论
@@ -37,8 +37,8 @@ const commentController = {
       // 验证排序字段
       const validSortFields = ['createdAt', 'updatedAt'];
       const actualSortBy = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
-      const actualSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) 
-        ? sortOrder.toUpperCase() 
+      const actualSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase())
+        ? sortOrder.toUpperCase()
         : 'ASC';
 
       // 分页参数
@@ -52,8 +52,8 @@ const commentController = {
           model: User,
           as: 'author',
           attributes: ['id', 'username', 'firstName', 'lastName'],
-          required: true
-        }
+          required: true,
+        },
       ];
 
       // 如果需要包含回复
@@ -61,14 +61,16 @@ const commentController = {
         include.push({
           model: Comment,
           as: 'replies',
-          include: [{
-            model: User,
-            as: 'author',
-            attributes: ['id', 'username', 'firstName', 'lastName']
-          }],
+          include: [
+            {
+              model: User,
+              as: 'author',
+              attributes: ['id', 'username', 'firstName', 'lastName'],
+            },
+          ],
           where: onlyApproved === 'true' ? { isApproved: true } : {},
           required: false,
-          order: [['createdAt', 'ASC']]
+          order: [['createdAt', 'ASC']],
         });
       }
 
@@ -79,36 +81,41 @@ const commentController = {
         offset: offset,
         order: [[actualSortBy, actualSortOrder]],
         include: include,
-        distinct: true
+        distinct: true,
       });
 
       // 如果需要构建评论树
       let processedComments = comments;
       if (includeReplies === 'true') {
-        processedComments = await Promise.all(comments.map(async (comment) => {
-          const commentTree = await comment.buildCommentTree();
-          return commentTree;
-        }));
+        processedComments = await Promise.all(
+          comments.map(async comment => {
+            const commentTree = await comment.buildCommentTree();
+            return commentTree;
+          })
+        );
       }
 
-      statusCode.success.ok(res, {
-        comments: processedComments,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total: count,
-          totalPages: Math.ceil(count / limitNum),
-          hasNext: pageNum < Math.ceil(count / limitNum),
-          hasPrev: pageNum > 1
+      statusCode.success.ok(
+        res,
+        {
+          comments: processedComments,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: count,
+            totalPages: Math.ceil(count / limitNum),
+            hasNext: pageNum < Math.ceil(count / limitNum),
+            hasPrev: pageNum > 1,
+          },
+          postInfo: {
+            id: post.id,
+            title: post.title,
+            allowComments: post.allowComments,
+          },
+          sorting: { sortBy: actualSortBy, sortOrder: actualSortOrder },
         },
-        postInfo: {
-          id: post.id,
-          title: post.title,
-          allowComments: post.allowComments
-        },
-        sorting: { sortBy: actualSortBy, sortOrder: actualSortOrder }
-      }, '获取评论列表成功');
-
+        '获取评论列表成功'
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '获取评论列表失败', error);
     }
@@ -124,34 +131,38 @@ const commentController = {
           {
             model: User,
             as: 'author',
-            attributes: ['id', 'username', 'firstName', 'lastName']
+            attributes: ['id', 'username', 'firstName', 'lastName'],
           },
           {
             model: Post,
             as: 'post',
-            attributes: ['id', 'title', 'allowComments']
+            attributes: ['id', 'title', 'allowComments'],
           },
           {
             model: Comment,
             as: 'parent',
             attributes: ['id', 'content', 'authorId'],
-            include: [{
-              model: User,
-              as: 'author',
-              attributes: ['id', 'username']
-            }]
+            include: [
+              {
+                model: User,
+                as: 'author',
+                attributes: ['id', 'username'],
+              },
+            ],
           },
           {
             model: Comment,
             as: 'replies',
-            include: [{
-              model: User,
-              as: 'author',
-              attributes: ['id', 'username', 'firstName', 'lastName']
-            }],
-            order: [['createdAt', 'ASC']]
-          }
-        ]
+            include: [
+              {
+                model: User,
+                as: 'author',
+                attributes: ['id', 'username', 'firstName', 'lastName'],
+              },
+            ],
+            order: [['createdAt', 'ASC']],
+          },
+        ],
       });
 
       if (!comment) {
@@ -159,7 +170,6 @@ const commentController = {
       }
 
       statusCode.success.ok(res, comment, '获取评论详情成功');
-
     } catch (error) {
       statusCode.serverError.internalError(res, '获取评论详情失败', error);
     }
@@ -206,7 +216,7 @@ const commentController = {
         parentId: parentId || null,
         isApproved: true, // 在实际应用中可能需要审核流程
         ipAddress,
-        userAgent
+        userAgent,
       });
 
       // 重新获取完整的评论信息
@@ -215,27 +225,31 @@ const commentController = {
           {
             model: User,
             as: 'author',
-            attributes: ['id', 'username', 'firstName', 'lastName']
+            attributes: ['id', 'username', 'firstName', 'lastName'],
           },
           {
             model: Comment,
             as: 'parent',
             attributes: ['id', 'content'],
-            include: [{
-              model: User,
-              as: 'author',
-              attributes: ['id', 'username']
-            }]
-          }
-        ]
+            include: [
+              {
+                model: User,
+                as: 'author',
+                attributes: ['id', 'username'],
+              },
+            ],
+          },
+        ],
       });
 
       statusCode.success.created(res, completeComment, '评论创建成功');
-
     } catch (error) {
       if (error.name === 'SequelizeValidationError') {
         const validationErrors = error.errors.map(err => err.message);
-        return statusCode.clientError.badRequest(res, `数据验证失败: ${validationErrors.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `数据验证失败: ${validationErrors.join(', ')}`
+        );
       }
 
       statusCode.serverError.internalError(res, '创建评论失败', error);
@@ -254,15 +268,17 @@ const commentController = {
       }
 
       // 权限检查：只有评论作者、管理员和版主可以编辑
-      if (req.user.userId !== comment.authorId && 
-          !['admin', 'moderator'].includes(req.user.role)) {
+      if (
+        req.user.userId !== comment.authorId &&
+        !['admin', 'moderator'].includes(req.user.role)
+      ) {
         return statusCode.clientError.forbidden(res, '权限不足：只能编辑自己的评论');
       }
 
       // 检查评论是否可以编辑（例如：发布后一段时间内才能编辑）
       const commentAge = Date.now() - new Date(comment.createdAt).getTime();
       const editTimeLimit = 30 * 60 * 1000; // 30分钟
-      
+
       if (commentAge > editTimeLimit && req.user.role === 'user') {
         return statusCode.clientError.forbidden(res, '评论发布超过30分钟后不能编辑');
       }
@@ -270,25 +286,29 @@ const commentController = {
       // 更新评论
       await comment.update({
         content,
-        isEdited: true
+        isEdited: true,
       });
 
       // 重新获取更新后的评论信息
       await comment.reload();
       const completeComment = await Comment.findByPk(comment.id, {
-        include: [{
-          model: User,
-          as: 'author',
-          attributes: ['id', 'username', 'firstName', 'lastName']
-        }]
+        include: [
+          {
+            model: User,
+            as: 'author',
+            attributes: ['id', 'username', 'firstName', 'lastName'],
+          },
+        ],
       });
 
       statusCode.success.ok(res, completeComment, '评论更新成功');
-
     } catch (error) {
       if (error.name === 'SequelizeValidationError') {
         const validationErrors = error.errors.map(err => err.message);
-        return statusCode.clientError.badRequest(res, `数据验证失败: ${validationErrors.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `数据验证失败: ${validationErrors.join(', ')}`
+        );
       }
 
       statusCode.serverError.internalError(res, '更新评论失败', error);
@@ -302,10 +322,12 @@ const commentController = {
       const { permanent = false } = req.query;
 
       const comment = await Comment.findByPk(commentId, {
-        include: [{
-          model: Comment,
-          as: 'replies'
-        }]
+        include: [
+          {
+            model: Comment,
+            as: 'replies',
+          },
+        ],
       });
 
       if (!comment) {
@@ -313,14 +335,19 @@ const commentController = {
       }
 
       // 权限检查：只有评论作者、管理员和版主可以删除
-      if (req.user.userId !== comment.authorId && 
-          !['admin', 'moderator'].includes(req.user.role)) {
+      if (
+        req.user.userId !== comment.authorId &&
+        !['admin', 'moderator'].includes(req.user.role)
+      ) {
         return statusCode.clientError.forbidden(res, '权限不足：只能删除自己的评论');
       }
 
       // 如果有回复评论，提醒用户
       if (comment.replies && comment.replies.length > 0 && permanent !== 'true') {
-        return statusCode.clientError.badRequest(res, '该评论有回复，请先删除所有回复或使用永久删除');
+        return statusCode.clientError.badRequest(
+          res,
+          '该评论有回复，请先删除所有回复或使用永久删除'
+        );
       }
 
       if (permanent === 'true') {
@@ -332,7 +359,6 @@ const commentController = {
         await comment.destroy();
         statusCode.success.ok(res, null, '评论已删除');
       }
-
     } catch (error) {
       statusCode.serverError.internalError(res, '删除评论失败', error);
     }
@@ -349,15 +375,14 @@ const commentController = {
         return statusCode.clientError.notFound(res, '评论不存在');
       }
 
-      await comment.update({ 
+      await comment.update({
         isApproved: approved,
         approvedAt: approved ? new Date() : null,
-        approvedBy: approved ? req.user.userId : null
+        approvedBy: approved ? req.user.userId : null,
       });
 
       const action = approved ? '审核通过' : '审核拒绝';
       statusCode.success.ok(res, comment, `评论${action}成功`);
-
     } catch (error) {
       statusCode.serverError.internalError(res, '审核评论失败', error);
     }
@@ -370,7 +395,7 @@ const commentController = {
         page = 1,
         limit = 20,
         sortBy = 'createdAt',
-        sortOrder = 'DESC'
+        sortOrder = 'DESC',
       } = req.query;
 
       // 分页参数
@@ -388,28 +413,31 @@ const commentController = {
           {
             model: User,
             as: 'author',
-            attributes: ['id', 'username', 'firstName', 'lastName', 'email']
+            attributes: ['id', 'username', 'firstName', 'lastName', 'email'],
           },
           {
             model: Post,
             as: 'post',
-            attributes: ['id', 'title']
-          }
-        ]
+            attributes: ['id', 'title'],
+          },
+        ],
       });
 
-      statusCode.success.ok(res, {
-        comments,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total: count,
-          totalPages: Math.ceil(count / limitNum),
-          hasNext: pageNum < Math.ceil(count / limitNum),
-          hasPrev: pageNum > 1
-        }
-      }, '获取待审核评论列表成功');
-
+      statusCode.success.ok(
+        res,
+        {
+          comments,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: count,
+            totalPages: Math.ceil(count / limitNum),
+            hasNext: pageNum < Math.ceil(count / limitNum),
+            hasPrev: pageNum > 1,
+          },
+        },
+        '获取待审核评论列表成功'
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '获取待审核评论列表失败', error);
     }
@@ -426,7 +454,10 @@ const commentController = {
 
       const validOperations = ['approve', 'reject', 'delete'];
       if (!validOperations.includes(operation)) {
-        return statusCode.clientError.badRequest(res, `操作类型必须是以下之一: ${validOperations.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `操作类型必须是以下之一: ${validOperations.join(', ')}`
+        );
       }
 
       const results = [];
@@ -444,7 +475,7 @@ const commentController = {
               await comment.update({
                 isApproved: true,
                 approvedAt: new Date(),
-                approvedBy: req.user.userId
+                approvedBy: req.user.userId,
               });
               results.push({ commentId, success: true, message: '评论已审核通过' });
               break;
@@ -453,7 +484,7 @@ const commentController = {
               await comment.update({
                 isApproved: false,
                 approvedAt: null,
-                approvedBy: null
+                approvedBy: null,
               });
               results.push({ commentId, success: true, message: '评论已审核拒绝' });
               break;
@@ -471,16 +502,19 @@ const commentController = {
       const successCount = results.filter(r => r.success).length;
       const failCount = results.length - successCount;
 
-      statusCode.success.ok(res, {
-        operation,
-        results,
-        summary: {
-          total: results.length,
-          success: successCount,
-          failed: failCount
-        }
-      }, `批量操作完成：成功 ${successCount} 个，失败 ${failCount} 个`);
-
+      statusCode.success.ok(
+        res,
+        {
+          operation,
+          results,
+          summary: {
+            total: results.length,
+            success: successCount,
+            failed: failCount,
+          },
+        },
+        `批量操作完成：成功 ${successCount} 个，失败 ${failCount} 个`
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '批量操作失败', error);
     }
@@ -491,7 +525,7 @@ const commentController = {
     try {
       const { postId } = req.params;
 
-      let whereCondition = {};
+      const whereCondition = {};
       if (postId) {
         // 验证文章存在性
         const post = await Post.findByPk(postId);
@@ -503,11 +537,10 @@ const commentController = {
 
       const stats = await Comment.getStats(whereCondition);
       statusCode.success.ok(res, stats, '获取评论统计信息成功');
-
     } catch (error) {
       statusCode.serverError.internalError(res, '获取评论统计信息失败', error);
     }
-  }
+  },
 };
 
 module.exports = commentController;

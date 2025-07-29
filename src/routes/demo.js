@@ -25,9 +25,9 @@ router.get('/status-codes', (req, res) => {
       'POST /demo/status/422': '422 Unprocessable Entity - 无法处理',
       'GET /demo/status/429': '429 Too Many Requests - 请求过多',
       'GET /demo/status/500': '500 Internal Server Error - 服务器错误',
-      'GET /demo/status/503': '503 Service Unavailable - 服务不可用'
+      'GET /demo/status/503': '503 Service Unavailable - 服务不可用',
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -54,22 +54,22 @@ router.get('/status/304', (req, res) => {
   // 模拟ETag检查
   const etag = '"example-etag-123"';
   res.header('ETag', etag);
-  
+
   if (req.headers['if-none-match'] === etag) {
     return res.status(304).end();
   }
-  
+
   res.json({
     status: 'success',
     message: '资源内容（ETag检查演示）',
-    data: { content: 'This is cached content' }
+    data: { content: 'This is cached content' },
   });
 });
 
 // 4xx 客户端错误状态码演示
 router.get('/status/400', (req, res) => {
   statusCode.clientError.badRequest(res, '缺少必要的请求参数', {
-    missingParams: ['name', 'email']
+    missingParams: ['name', 'email'],
   });
 });
 
@@ -94,14 +94,17 @@ router.all('/status/405', statusCode.middleware.checkMethodAllowed(['GET']));
 
 router.get('/status/406', (req, res) => {
   const acceptHeader = req.headers.accept;
-  if (!acceptHeader || (!acceptHeader.includes('application/json') && !acceptHeader.includes('*/*'))) {
+  if (
+    !acceptHeader ||
+    (!acceptHeader.includes('application/json') && !acceptHeader.includes('*/*'))
+  ) {
     return statusCode.clientError.notAcceptable(res, ['application/json']);
   }
-  
+
   res.json({
     status: 'success',
     message: '内容协商成功',
-    acceptedType: 'application/json'
+    acceptedType: 'application/json',
   });
 });
 
@@ -110,11 +113,7 @@ router.post('/status/409', (req, res) => {
 });
 
 router.post('/status/422', (req, res) => {
-  const validationErrors = [
-    '邮箱格式不正确',
-    '密码长度必须至少8位',
-    '年龄必须是正整数'
-  ];
+  const validationErrors = ['邮箱格式不正确', '密码长度必须至少8位', '年龄必须是正整数'];
   statusCode.clientError.unprocessableEntity(res, '数据验证失败', validationErrors);
 });
 
@@ -143,7 +142,7 @@ router.get('/headers-demo', (req, res) => {
       'GET /demo/headers/content-negotiation': '内容协商演示',
       'GET /demo/headers/request-tracking': '请求追踪演示',
       'GET /demo/headers/conditional': '条件请求演示',
-      'GET /demo/headers/all': '查看当前请求的所有头部'
+      'GET /demo/headers/all': '查看当前请求的所有头部',
     },
     currentHeaders: {
       userAgent: req.headers['user-agent'],
@@ -151,9 +150,9 @@ router.get('/headers-demo', (req, res) => {
       acceptEncoding: req.headers['accept-encoding'],
       acceptLanguage: req.headers['accept-language'],
       host: req.headers.host,
-      connection: req.headers.connection
+      connection: req.headers.connection,
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -167,24 +166,28 @@ router.get('/headers/security', headers.security, (req, res) => {
       'X-Content-Type-Options': 'nosniff',
       'X-XSS-Protection': '1; mode=block',
       'Content-Security-Policy': "default-src 'self'",
-      'Referrer-Policy': 'strict-origin-when-cross-origin'
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
 // 缓存控制演示
-router.get('/headers/cache', headers.cache({ maxAge: 300, private: false }), (req, res) => {
-  res.json({
-    status: 'success',
-    message: '缓存头部已设置',
-    cacheSettings: {
-      'Cache-Control': 'public, max-age=300, must-revalidate',
-      'ETag': res.get('ETag')
-    },
-    timestamp: new Date().toISOString()
-  });
-});
+router.get(
+  '/headers/cache',
+  headers.cache({ maxAge: 300, private: false }),
+  (req, res) => {
+    res.json({
+      status: 'success',
+      message: '缓存头部已设置',
+      cacheSettings: {
+        'Cache-Control': 'public, max-age=300, must-revalidate',
+        ETag: res.get('ETag'),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  }
+);
 
 // 内容协商演示
 router.get('/headers/content-negotiation', headers.contentNegotiation, (req, res) => {
@@ -193,9 +196,9 @@ router.get('/headers/content-negotiation', headers.contentNegotiation, (req, res
     message: '内容协商成功',
     negotiatedType: req.negotiatedContentType,
     clientAccept: req.headers.accept,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
-  
+
   if (req.negotiatedContentType === 'text/plain') {
     res.send(`状态: ${data.status}\n消息: ${data.message}\n时间: ${data.timestamp}`);
   } else {
@@ -211,9 +214,9 @@ router.get('/headers/request-tracking', headers.requestTracking, (req, res) => {
     requestId: req.requestId,
     responseHeaders: {
       'X-Request-ID': res.get('X-Request-ID'),
-      'X-Response-Time': res.get('X-Response-Time')
+      'X-Response-Time': res.get('X-Response-Time'),
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -221,28 +224,30 @@ router.get('/headers/request-tracking', headers.requestTracking, (req, res) => {
 router.get('/headers/conditional', (req, res) => {
   const lastModified = new Date('2024-01-01T00:00:00.000Z').toUTCString();
   const etag = '"conditional-demo-123"';
-  
+
   res.header('Last-Modified', lastModified);
   res.header('ETag', etag);
-  
+
   // 检查条件请求头
   const ifModifiedSince = req.headers['if-modified-since'];
   const ifNoneMatch = req.headers['if-none-match'];
-  
-  if (ifNoneMatch === etag || 
-      (ifModifiedSince && new Date(ifModifiedSince) >= new Date(lastModified))) {
+
+  if (
+    ifNoneMatch === etag ||
+    (ifModifiedSince && new Date(ifModifiedSince) >= new Date(lastModified))
+  ) {
     return res.status(304).end();
   }
-  
+
   res.json({
     status: 'success',
     message: '条件请求演示',
     headers: {
       'Last-Modified': lastModified,
-      'ETag': etag
+      ETag: etag,
     },
     note: '再次请求时，如果设置了 If-None-Match 或 If-Modified-Since 头部，将返回304',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -258,9 +263,9 @@ router.get('/headers/all', (req, res) => {
       protocol: req.protocol,
       secure: req.secure,
       ip: req.ip,
-      httpVersion: req.httpVersion
+      httpVersion: req.httpVersion,
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -271,7 +276,7 @@ router.get('/headers/version', headers.apiVersion('v1'), (req, res) => {
     message: 'API版本控制演示',
     version: 'v1',
     note: '尝试在请求头中添加 API-Version: v2 来测试版本检查',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 

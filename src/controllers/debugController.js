@@ -15,122 +15,126 @@ const debugController = {
       const errorStatistics = errorStats.getStats();
       const requestStats = requestTracker.getStats();
       const loggerStats = logger.stats.getStats();
-      
+
       const overview = {
         timestamp: new Date().toISOString(),
         status: 'healthy',
         uptime: performanceStats.uptime,
         version: process.env.npm_package_version || '1.0.0',
         environment: process.env.NODE_ENV || 'development',
-        
+
         // 请求统计
         requests: {
           total: performanceStats.requests.total,
           perMinute: performanceStats.requests.perMinute,
           active: requestStats.activeRequests,
-          avgResponseTime: performanceStats.requests.avgResponseTime
+          avgResponseTime: performanceStats.requests.avgResponseTime,
         },
-        
+
         // 错误统计
         errors: {
           total: errorStatistics.total,
           rate: requestStats.errorRate,
-          recent: errorStatistics.recentErrorsCount
+          recent: errorStatistics.recentErrorsCount,
         },
-        
+
         // 性能指标
         performance: {
           memoryUsage: performanceStats.memory.current,
           memoryTrend: performanceStats.memory.trend,
           slowQueries: performanceStats.database.slowQueries,
-          slowQueryRate: performanceStats.database.slowQueryRate
+          slowQueryRate: performanceStats.database.slowQueryRate,
         },
-        
+
         // 日志统计
-        logs: loggerStats
+        logs: loggerStats,
       };
-      
+
       // 健康状态评估
       if (performanceStats.requests.avgResponseTime > 2000) {
         overview.status = 'degraded';
       }
-      
+
       if (requestStats.errorRate > 10 || performanceStats.memory.current.heapUsed > 512) {
         overview.status = 'unhealthy';
       }
-      
+
       statusCode.success.ok(res, overview, '系统概览获取成功');
     } catch (error) {
       statusCode.serverError.internalError(res, '获取系统概览失败', error);
     }
   },
-  
+
   // 实时请求监控
   getActiveRequests: async (req, res) => {
     try {
       const activeRequests = requestTracker.getActiveRequests();
       const stats = requestTracker.getStats();
-      
-      statusCode.success.ok(res, {
-        activeRequests,
-        stats,
-        timestamp: new Date().toISOString()
-      }, '活跃请求信息获取成功');
+
+      statusCode.success.ok(
+        res,
+        {
+          activeRequests,
+          stats,
+          timestamp: new Date().toISOString(),
+        },
+        '活跃请求信息获取成功'
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '获取活跃请求信息失败', error);
     }
   },
-  
+
   // 请求详情
   getRequestDetails: async (req, res) => {
     try {
       const { traceId } = req.params;
       const requestDetails = requestTracker.getRequestDetails(traceId);
-      
+
       if (!requestDetails) {
         return statusCode.clientError.notFound(res, '请求跟踪信息不存在');
       }
-      
+
       statusCode.success.ok(res, requestDetails, '请求详情获取成功');
     } catch (error) {
       statusCode.serverError.internalError(res, '获取请求详情失败', error);
     }
   },
-  
+
   // 性能监控
   getPerformanceMetrics: async (req, res) => {
     try {
       const performanceMetrics = getPerformanceStats();
-      
+
       statusCode.success.ok(res, performanceMetrics, '性能指标获取成功');
     } catch (error) {
       statusCode.serverError.internalError(res, '获取性能指标失败', error);
     }
   },
-  
+
   // 错误监控
   getErrorMetrics: async (req, res) => {
     try {
       const { limit = 20 } = req.query;
-      
+
       const errorMetrics = {
         stats: errorStats.getStats(),
         recentErrors: errorStats.getRecentErrors(parseInt(limit)),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
+
       statusCode.success.ok(res, errorMetrics, '错误统计信息获取成功');
     } catch (error) {
       statusCode.serverError.internalError(res, '获取错误统计信息失败', error);
     }
   },
-  
+
   // 日志查看
   getLogs: async (req, res) => {
     try {
       const { level = 'all', limit = 100, offset = 0 } = req.query;
       const logDir = './logs';
-      
+
       // 根据级别选择日志文件
       let logFile;
       switch (level) {
@@ -143,17 +147,17 @@ const debugController = {
         default:
           logFile = 'combined.log';
       }
-      
+
       const logPath = path.join(logDir, logFile);
-      
+
       if (!fs.existsSync(logPath)) {
         return statusCode.clientError.notFound(res, '日志文件不存在');
       }
-      
+
       // 读取日志文件（简单实现，生产环境建议使用流式读取）
       const logContent = fs.readFileSync(logPath, 'utf8');
       const logLines = logContent.split('\n').filter(line => line.trim());
-      
+
       // 解析JSON日志行
       const logs = logLines
         .slice(-limit - offset, -offset || undefined)
@@ -165,19 +169,23 @@ const debugController = {
           }
         })
         .reverse();
-      
-      statusCode.success.ok(res, {
-        logs,
-        total: logLines.length,
-        level,
-        limit: parseInt(limit),
-        offset: parseInt(offset)
-      }, '日志信息获取成功');
+
+      statusCode.success.ok(
+        res,
+        {
+          logs,
+          total: logLines.length,
+          level,
+          limit: parseInt(limit),
+          offset: parseInt(offset),
+        },
+        '日志信息获取成功'
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '获取日志信息失败', error);
     }
   },
-  
+
   // 系统配置信息
   getSystemConfig: async (req, res) => {
     try {
@@ -187,39 +195,42 @@ const debugController = {
         platform: process.platform,
         arch: process.arch,
         pid: process.pid,
-        
+
         // 环境变量（过滤敏感信息）
         envVars: Object.fromEntries(
           Object.entries(process.env)
-            .filter(([key]) => !key.toLowerCase().includes('password') && 
-                               !key.toLowerCase().includes('secret') && 
-                               !key.toLowerCase().includes('key'))
+            .filter(
+              ([key]) =>
+                !key.toLowerCase().includes('password') &&
+                !key.toLowerCase().includes('secret') &&
+                !key.toLowerCase().includes('key')
+            )
             .slice(0, 20) // 只显示前20个
         ),
-        
+
         // 内存使用
         memoryUsage: process.memoryUsage(),
-        
+
         // CPU使用
         cpuUsage: process.cpuUsage(),
-        
+
         // 运行时间
         uptime: process.uptime(),
-        
+
         // 包信息
         packageInfo: {
           name: process.env.npm_package_name,
           version: process.env.npm_package_version,
-          description: process.env.npm_package_description
-        }
+          description: process.env.npm_package_description,
+        },
       };
-      
+
       statusCode.success.ok(res, config, '系统配置信息获取成功');
     } catch (error) {
       statusCode.serverError.internalError(res, '获取系统配置信息失败', error);
     }
   },
-  
+
   // 健康检查
   getHealthCheck: async (req, res) => {
     try {
@@ -227,77 +238,83 @@ const debugController = {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        
+
         // 检查各个组件
         checks: {
           memory: checkMemoryHealth(),
           database: await checkDatabaseHealth(),
           logs: checkLogHealth(),
-          disk: checkDiskHealth()
-        }
+          disk: checkDiskHealth(),
+        },
       };
-      
+
       // 判断整体健康状态
-      const hasUnhealthy = Object.values(health.checks).some(check => check.status !== 'healthy');
+      const hasUnhealthy = Object.values(health.checks).some(
+        check => check.status !== 'healthy'
+      );
       if (hasUnhealthy) {
         health.status = 'degraded';
       }
-      
+
       const statusCodeToUse = health.status === 'healthy' ? 200 : 503;
       res.status(statusCodeToUse).json({
         status: 'success',
         data: health,
-        message: `系统状态: ${health.status}`
+        message: `系统状态: ${health.status}`,
       });
     } catch (error) {
       statusCode.serverError.internalError(res, '健康检查失败', error);
     }
   },
-  
+
   // 重置统计信息
   resetMetrics: async (req, res) => {
     try {
       resetStats();
-      
+
       logger.info('Metrics reset by user', {
         traceId: req.traceId,
         userId: req.user?.userId,
-        ip: req.ip
+        ip: req.ip,
       });
-      
-      statusCode.success.ok(res, {
-        message: '统计信息已重置',
-        timestamp: new Date().toISOString()
-      }, '统计信息重置成功');
+
+      statusCode.success.ok(
+        res,
+        {
+          message: '统计信息已重置',
+          timestamp: new Date().toISOString(),
+        },
+        '统计信息重置成功'
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '重置统计信息失败', error);
     }
   },
-  
+
   // 调试面板HTML (开发环境)
   getDebugDashboard: async (req, res) => {
     if (process.env.NODE_ENV === 'production') {
       return statusCode.clientError.forbidden(res, '生产环境不允许访问调试面板');
     }
-    
+
     const html = generateDebugDashboardHTML();
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
-  }
+  },
 };
 
 // 辅助函数：检查内存健康状态
 function checkMemoryHealth() {
   const memUsage = process.memoryUsage();
   const heapUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
-  
+
   return {
     status: heapUsedMB > 512 ? 'unhealthy' : 'healthy',
     details: {
       heapUsed: heapUsedMB,
       heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
-      rss: Math.round(memUsage.rss / 1024 / 1024)
-    }
+      rss: Math.round(memUsage.rss / 1024 / 1024),
+    },
   };
 }
 
@@ -308,12 +325,12 @@ async function checkDatabaseHealth() {
     const health = await healthCheck();
     return {
       status: health.status === 'healthy' ? 'healthy' : 'unhealthy',
-      details: health
+      details: health,
     };
   } catch (error) {
     return {
       status: 'unhealthy',
-      details: { error: error.message }
+      details: { error: error.message },
     };
   }
 }
@@ -322,7 +339,7 @@ async function checkDatabaseHealth() {
 function checkLogHealth() {
   const logDir = './logs';
   const logFiles = ['error.log', 'combined.log', 'app.log'];
-  
+
   try {
     const stats = logFiles.map(file => {
       const filePath = path.join(logDir, file);
@@ -331,20 +348,20 @@ function checkLogHealth() {
         return {
           file,
           size: Math.round(stat.size / 1024), // KB
-          modified: stat.mtime
+          modified: stat.mtime,
         };
       }
       return { file, exists: false };
     });
-    
+
     return {
       status: 'healthy',
-      details: { files: stats }
+      details: { files: stats },
     };
   } catch (error) {
     return {
       status: 'unhealthy',
-      details: { error: error.message }
+      details: { error: error.message },
     };
   }
 }
@@ -357,13 +374,13 @@ function checkDiskHealth() {
       status: 'healthy',
       details: {
         accessible: true,
-        timestamp: stats.mtime
-      }
+        timestamp: stats.mtime,
+      },
     };
   } catch (error) {
     return {
       status: 'unhealthy',
-      details: { error: error.message }
+      details: { error: error.message },
     };
   }
 }

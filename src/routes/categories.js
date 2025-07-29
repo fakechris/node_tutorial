@@ -12,7 +12,7 @@ const validateCategoryId = (req, res, next) => {
     return res.status(400).json({
       status: 'error',
       message: '分类ID必须是正整数',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
   req.params.id = categoryId;
@@ -37,7 +37,8 @@ router.get('/search', categoryController.searchCategories);
 
 // GET /api/categories/stats - 获取分类统计信息
 // 需要认证，管理员和版主可以访问
-router.get('/stats', 
+router.get(
+  '/stats',
   auth.authenticate,
   auth.authorize(['admin', 'moderator']),
   categoryController.getCategoryStats
@@ -45,112 +46,112 @@ router.get('/stats',
 
 // GET /api/categories/:id - 获取单个分类详情
 // 公开访问
-router.get('/:id', 
-  validateCategoryId,
-  categoryController.getCategoryById
-);
+router.get('/:id', validateCategoryId, categoryController.getCategoryById);
 
 // POST /api/categories - 创建新分类（仅管理员和版主）
-router.post('/', 
+router.post(
+  '/',
   auth.authenticate,
   auth.authorize(['admin', 'moderator']),
   validateRequest({
     body: {
-      name: { 
-        required: true, 
-        type: 'string', 
-        minLength: 1, 
-        maxLength: 100
+      name: {
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
       },
       slug: {
         required: false,
         type: 'string',
         maxLength: 100,
-        pattern: /^[a-z0-9-]+$/
+        pattern: /^[a-z0-9-]+$/,
       },
       description: {
         required: false,
         type: 'string',
-        maxLength: 1000
+        maxLength: 1000,
       },
       parentId: {
         required: false,
-        type: 'number'
+        type: 'number',
       },
       sortOrder: {
         required: false,
-        type: 'number'
+        type: 'number',
       },
       isActive: {
         required: false,
-        type: 'boolean'
+        type: 'boolean',
       },
       color: {
         required: false,
         type: 'string',
-        pattern: /^#[0-9A-Fa-f]{6}$/
+        pattern: /^#[0-9A-Fa-f]{6}$/,
       },
       iconUrl: {
         required: false,
-        type: 'string'
-      }
-    }
-  }), 
+        type: 'string',
+      },
+    },
+  }),
   categoryController.createCategory
 );
 
 // PUT /api/categories/:id - 更新分类（仅管理员和版主）
-router.put('/:id', 
+router.put(
+  '/:id',
   validateCategoryId,
   auth.authenticate,
   auth.authorize(['admin', 'moderator']),
   validateRequest({
     body: {
-      name: { 
-        required: false, 
-        type: 'string', 
-        minLength: 1, 
-        maxLength: 100
+      name: {
+        required: false,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
       },
       slug: {
         required: false,
         type: 'string',
         maxLength: 100,
-        pattern: /^[a-z0-9-]+$/
+        pattern: /^[a-z0-9-]+$/,
       },
       description: {
         required: false,
         type: 'string',
-        maxLength: 1000
+        maxLength: 1000,
       },
       parentId: {
         required: false,
-        type: 'number'
+        type: 'number',
       },
       sortOrder: {
         required: false,
-        type: 'number'
+        type: 'number',
       },
       isActive: {
         required: false,
-        type: 'boolean'
+        type: 'boolean',
       },
       color: {
         required: false,
         type: 'string',
-        pattern: /^#[0-9A-Fa-f]{6}$/
+        pattern: /^#[0-9A-Fa-f]{6}$/,
       },
       iconUrl: {
         required: false,
-        type: 'string'
-      }
-    }
-  }), 
+        type: 'string',
+      },
+    },
+  }),
   categoryController.updateCategory
 );
 
 // DELETE /api/categories/:id - 删除分类（仅管理员）
-router.delete('/:id', 
+router.delete(
+  '/:id',
   validateCategoryId,
   auth.authenticate,
   auth.authorize(['admin']),
@@ -158,25 +159,26 @@ router.delete('/:id',
 );
 
 // POST /api/categories/batch - 批量操作分类（仅管理员和版主）
-router.post('/batch', 
+router.post(
+  '/batch',
   auth.authenticate,
   auth.authorize(['admin', 'moderator']),
   validateRequest({
     body: {
       operation: {
         required: true,
-        type: 'string'
+        type: 'string',
       },
       categoryIds: {
         required: true,
         type: 'array',
-        minItems: 1
+        minItems: 1,
       },
       data: {
         required: false,
-        type: 'object'
-      }
-    }
+        type: 'object',
+      },
+    },
   }),
   categoryController.batchOperation
 );

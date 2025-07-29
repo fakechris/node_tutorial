@@ -1,6 +1,6 @@
 // 种子数据：默认分类
 module.exports = {
-  up: async (sequelize) => {
+  up: async sequelize => {
     await sequelize.bulkInsert('Categories', [
       {
         name: '技术分享',
@@ -10,7 +10,7 @@ module.exports = {
         isActive: true,
         sortOrder: 1,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       {
         name: '前端开发',
@@ -20,7 +20,7 @@ module.exports = {
         isActive: true,
         sortOrder: 2,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       {
         name: '后端开发',
@@ -30,7 +30,7 @@ module.exports = {
         isActive: true,
         sortOrder: 3,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       {
         name: 'Node.js',
@@ -40,7 +40,7 @@ module.exports = {
         isActive: true,
         sortOrder: 1,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       {
         name: '数据库',
@@ -50,7 +50,7 @@ module.exports = {
         isActive: true,
         sortOrder: 2,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       {
         name: '系统架构',
@@ -60,14 +60,14 @@ module.exports = {
         isActive: true,
         sortOrder: 4,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     ]);
   },
 
-  down: async (sequelize) => {
+  down: async sequelize => {
     await sequelize.bulkDelete('Categories', {
-      slug: ['tech', 'frontend', 'backend', 'nodejs', 'database', 'architecture']
+      slug: ['tech', 'frontend', 'backend', 'nodejs', 'database', 'architecture'],
     });
-  }
+  },
 };

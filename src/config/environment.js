@@ -7,7 +7,7 @@ const loadEnvironmentConfig = () => {
   const env = process.env.NODE_ENV || 'development';
   const envFile = `.env.${env}`;
   const envPath = path.join(process.cwd(), envFile);
-  
+
   // 检查环境配置文件是否存在
   if (fs.existsSync(envPath)) {
     console.log(`📋 加载环境配置: ${envFile}`);
@@ -22,19 +22,19 @@ const loadEnvironmentConfig = () => {
 const validateEnvironmentConfig = () => {
   const required = ['NODE_ENV', 'PORT'];
   const missing = required.filter(key => !process.env[key]);
-  
+
   if (missing.length > 0) {
     console.error(`❌ 缺少必需的环境变量: ${missing.join(', ')}`);
     process.exit(1);
   }
-  
+
   // 生产环境额外验证
   if (process.env.NODE_ENV === 'production') {
     const productionRequired = ['JWT_SECRET', 'SESSION_SECRET'];
-    const productionMissing = productionRequired.filter(key => 
-      !process.env[key] || process.env[key].includes('change-in-production')
+    const productionMissing = productionRequired.filter(
+      key => !process.env[key] || process.env[key].includes('change-in-production')
     );
-    
+
     if (productionMissing.length > 0) {
       console.error(`❌ 生产环境必须设置安全的密钥: ${productionMissing.join(', ')}`);
       process.exit(1);
@@ -50,7 +50,7 @@ class ConfigManager {
     this.isDevelopment = this.env === 'development';
     this.isTest = this.env === 'test';
   }
-  
+
   // 服务器配置
   get server() {
     return {
@@ -58,28 +58,28 @@ class ConfigManager {
       host: process.env.HOST || 'localhost',
       timeout: parseInt(process.env.REQUEST_TIMEOUT) || 30000,
       bodyLimit: process.env.BODY_LIMIT || '10mb',
-      compression: process.env.COMPRESSION_ENABLED === 'true'
+      compression: process.env.COMPRESSION_ENABLED === 'true',
     };
   }
-  
+
   // 数据库配置
   get database() {
     return {
       url: process.env.DATABASE_URL,
       sqlite: {
         storage: process.env.SQLITE_DATABASE_PATH || './database/tutorial.db',
-        logging: this.isDevelopment
+        logging: this.isDevelopment,
       },
       pool: {
         max: parseInt(process.env.DB_POOL_MAX) || 10,
         min: parseInt(process.env.DB_POOL_MIN) || 0,
         acquire: parseInt(process.env.DB_POOL_ACQUIRE) || 30000,
-        idle: parseInt(process.env.DB_POOL_IDLE) || 10000
+        idle: parseInt(process.env.DB_POOL_IDLE) || 10000,
       },
-      forceSync: process.env.TEST_DATABASE_FORCE_SYNC === 'true'
+      forceSync: process.env.TEST_DATABASE_FORCE_SYNC === 'true',
     };
   }
-  
+
   // JWT配置
   get jwt() {
     return {
@@ -87,10 +87,10 @@ class ConfigManager {
       expiresIn: process.env.JWT_EXPIRES_IN || '24h',
       refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
       issuer: 'node-backend-tutorial',
-      audience: 'api-users'
+      audience: 'api-users',
     };
   }
-  
+
   // 日志配置
   get logging() {
     return {
@@ -98,10 +98,10 @@ class ConfigManager {
       dir: process.env.LOG_DIR || './logs',
       maxSize: process.env.LOG_MAX_SIZE || '10MB',
       maxFiles: parseInt(process.env.LOG_MAX_FILES) || 5,
-      console: !this.isProduction
+      console: !this.isProduction,
     };
   }
-  
+
   // 安全配置
   get security() {
     return {
@@ -110,41 +110,41 @@ class ConfigManager {
       cors: {
         origin: this.parseCorsOrigin(),
         methods: (process.env.CORS_METHODS || 'GET,POST,PUT,DELETE,OPTIONS').split(','),
-        allowedHeaders: this.parseCorsHeaders()
-      }
+        allowedHeaders: this.parseCorsHeaders(),
+      },
     };
   }
-  
+
   // 监控配置
   get monitoring() {
     return {
       enabled: process.env.MONITORING_ENABLED !== 'false',
       healthCheckInterval: parseInt(process.env.HEALTH_CHECK_INTERVAL) || 60000,
-      performanceSamplingRate: parseFloat(process.env.PERFORMANCE_SAMPLING_RATE) || 1.0
+      performanceSamplingRate: parseFloat(process.env.PERFORMANCE_SAMPLING_RATE) || 1.0,
     };
   }
-  
+
   // 缓存配置
   get cache() {
     return {
       enabled: process.env.CACHE_ENABLED === 'true',
       ttl: parseInt(process.env.CACHE_TTL) || 3600,
       redis: {
-        url: process.env.REDIS_URL || 'redis://localhost:6379'
-      }
+        url: process.env.REDIS_URL || 'redis://localhost:6379',
+      },
     };
   }
-  
+
   // 功能开关
   get features() {
     return {
       debugPanel: process.env.FEATURES_DEBUG_PANEL === 'true',
       detailedErrors: process.env.FEATURES_DETAILED_ERRORS === 'true',
       swaggerUI: process.env.FEATURES_SWAGGER_UI === 'true',
-      hotReload: process.env.FEATURES_HOT_RELOAD === 'true'
+      hotReload: process.env.FEATURES_HOT_RELOAD === 'true',
     };
   }
-  
+
   // 第三方服务配置
   get services() {
     return {
@@ -152,30 +152,30 @@ class ConfigManager {
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT) || 587,
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        pass: process.env.SMTP_PASS,
       },
       aws: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        region: process.env.AWS_REGION || 'us-west-2'
-      }
+        region: process.env.AWS_REGION || 'us-west-2',
+      },
     };
   }
-  
+
   // 辅助方法：解析CORS源
   parseCorsOrigin() {
     const origins = process.env.CORS_ORIGIN;
     if (!origins || origins === '*') return true;
     return origins.split(',').map(origin => origin.trim());
   }
-  
+
   // 辅助方法：解析CORS头部
   parseCorsHeaders() {
     const headers = process.env.CORS_ALLOWED_HEADERS;
     if (!headers || headers === '*') return true;
     return headers.split(',').map(header => header.trim());
   }
-  
+
   // 获取完整配置对象
   getConfig() {
     return {
@@ -191,15 +191,15 @@ class ConfigManager {
       monitoring: this.monitoring,
       cache: this.cache,
       features: this.features,
-      services: this.services
+      services: this.services,
     };
   }
-  
+
   // 打印配置信息（隐藏敏感信息）
   printConfig() {
     const config = this.getConfig();
     const safeConfig = this.sanitizeConfig(config);
-    
+
     console.log('📋 当前配置:');
     console.log('==============');
     console.log(`环境: ${config.env}`);
@@ -212,13 +212,13 @@ class ConfigManager {
     console.log(`调试面板: ${config.features.debugPanel ? '启用' : '禁用'}`);
     console.log('==============');
   }
-  
+
   // 清理敏感信息
   sanitizeConfig(config) {
     const sensitive = ['secret', 'password', 'key', 'token'];
     const cleaned = JSON.parse(JSON.stringify(config));
-    
-    const sanitize = (obj) => {
+
+    const sanitize = obj => {
       for (const key in obj) {
         if (typeof obj[key] === 'object' && obj[key] !== null) {
           sanitize(obj[key]);
@@ -230,7 +230,7 @@ class ConfigManager {
         }
       }
     };
-    
+
     sanitize(cleaned);
     return cleaned;
   }
@@ -240,14 +240,14 @@ class ConfigManager {
 const initializeConfig = () => {
   loadEnvironmentConfig();
   validateEnvironmentConfig();
-  
+
   const configManager = new ConfigManager();
-  
+
   // 开发环境打印配置信息
   if (configManager.isDevelopment) {
     configManager.printConfig();
   }
-  
+
   return configManager;
 };
 
@@ -255,5 +255,5 @@ module.exports = {
   ConfigManager,
   initializeConfig,
   loadEnvironmentConfig,
-  validateEnvironmentConfig
+  validateEnvironmentConfig,
 };

@@ -15,7 +15,7 @@ const categoryController = {
         isActive,
         flat = false,
         sortBy = 'sortOrder',
-        sortOrder = 'ASC'
+        sortOrder = 'ASC',
       } = req.query;
 
       if (flat === 'true') {
@@ -25,22 +25,30 @@ const categoryController = {
 
         // 搜索过滤
         if (search) {
-          filteredList = flatList.filter(cat => 
-            cat.name.toLowerCase().includes(search.toLowerCase()) ||
-            (cat.description && cat.description.toLowerCase().includes(search.toLowerCase()))
+          filteredList = flatList.filter(
+            cat =>
+              cat.name.toLowerCase().includes(search.toLowerCase()) ||
+              (cat.description &&
+                cat.description.toLowerCase().includes(search.toLowerCase()))
           );
         }
 
         // 状态过滤
         if (isActive !== undefined) {
-          filteredList = filteredList.filter(cat => cat.isActive === (isActive === 'true'));
+          filteredList = filteredList.filter(
+            cat => cat.isActive === (isActive === 'true')
+          );
         }
 
-        return statusCode.success.ok(res, {
-          categories: filteredList,
-          total: filteredList.length,
-          displayType: 'flat'
-        }, '获取分类扁平列表成功');
+        return statusCode.success.ok(
+          res,
+          {
+            categories: filteredList,
+            total: filteredList.length,
+            displayType: 'flat',
+          },
+          '获取分类扁平列表成功'
+        );
       }
 
       // 构建查询条件
@@ -49,7 +57,7 @@ const categoryController = {
       if (search) {
         whereConditions[Op.or] = [
           { name: { [Op.like]: `%${search}%` } },
-          { description: { [Op.like]: `%${search}%` } }
+          { description: { [Op.like]: `%${search}%` } },
         ];
       }
 
@@ -64,8 +72,8 @@ const categoryController = {
       // 验证排序字段
       const validSortFields = ['sortOrder', 'name', 'createdAt', 'postCount'];
       const actualSortBy = validSortFields.includes(sortBy) ? sortBy : 'sortOrder';
-      const actualSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) 
-        ? sortOrder.toUpperCase() 
+      const actualSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase())
+        ? sortOrder.toUpperCase()
         : 'ASC';
 
       // 分页参数
@@ -78,38 +86,44 @@ const categoryController = {
         where: whereConditions,
         limit: limitNum,
         offset: offset,
-        order: [[actualSortBy, actualSortOrder], ['name', 'ASC']],
+        order: [
+          [actualSortBy, actualSortOrder],
+          ['name', 'ASC'],
+        ],
         include: [
           {
             model: Category,
             as: 'parent',
-            attributes: ['id', 'name', 'slug']
+            attributes: ['id', 'name', 'slug'],
           },
           {
             model: Category,
             as: 'children',
             attributes: ['id', 'name', 'slug', 'postCount'],
             where: { isActive: true },
-            required: false
-          }
-        ]
+            required: false,
+          },
+        ],
       });
 
-      statusCode.success.ok(res, {
-        categories,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total: count,
-          totalPages: Math.ceil(count / limitNum),
-          hasNext: pageNum < Math.ceil(count / limitNum),
-          hasPrev: pageNum > 1
+      statusCode.success.ok(
+        res,
+        {
+          categories,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: count,
+            totalPages: Math.ceil(count / limitNum),
+            hasNext: pageNum < Math.ceil(count / limitNum),
+            hasPrev: pageNum > 1,
+          },
+          filters: { search, parentId, isActive },
+          sorting: { sortBy: actualSortBy, sortOrder: actualSortOrder },
+          displayType: 'paginated',
         },
-        filters: { search, parentId, isActive },
-        sorting: { sortBy: actualSortBy, sortOrder: actualSortOrder },
-        displayType: 'paginated'
-      }, '获取分类列表成功');
-
+        '获取分类列表成功'
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '获取分类列表失败', error);
     }
@@ -122,12 +136,15 @@ const categoryController = {
 
       const tree = await Category.buildTree(null, parseInt(maxDepth));
 
-      statusCode.success.ok(res, {
-        tree,
-        maxDepth: parseInt(maxDepth),
-        displayType: 'tree'
-      }, '获取分类树成功');
-
+      statusCode.success.ok(
+        res,
+        {
+          tree,
+          maxDepth: parseInt(maxDepth),
+          displayType: 'tree',
+        },
+        '获取分类树成功'
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '获取分类树失败', error);
     }
@@ -143,14 +160,17 @@ const categoryController = {
         {
           model: Category,
           as: 'parent',
-          attributes: ['id', 'name', 'slug']
+          attributes: ['id', 'name', 'slug'],
         },
         {
           model: Category,
           as: 'children',
           attributes: ['id', 'name', 'slug', 'postCount', 'isActive'],
-          order: [['sortOrder', 'ASC'], ['name', 'ASC']]
-        }
+          order: [
+            ['sortOrder', 'ASC'],
+            ['name', 'ASC'],
+          ],
+        },
       ];
 
       // 如果需要包含文章信息
@@ -162,19 +182,19 @@ const categoryController = {
           where: { status: 'published' },
           required: false,
           limit: 10,
-          order: [['createdAt', 'DESC']]
+          order: [['createdAt', 'DESC']],
         });
       }
 
       const category = await Category.findByPk(id, {
-        include: includeArray
+        include: includeArray,
       });
 
       if (!category) {
         return statusCode.clientError.notFound(res, '分类不存在');
       }
 
-      let responseData = category.toJSON();
+      const responseData = category.toJSON();
 
       // 如果需要统计信息
       if (includeStats === 'true') {
@@ -189,14 +209,13 @@ const categoryController = {
           isLeaf,
           ancestorsCount: ancestors.length,
           descendantsCount: descendants.length,
-          directChildrenCount: category.children ? category.children.length : 0
+          directChildrenCount: category.children ? category.children.length : 0,
         };
 
         responseData.breadcrumb = await category.getBreadcrumb();
       }
 
       statusCode.success.ok(res, responseData, '获取分类详情成功');
-
     } catch (error) {
       statusCode.serverError.internalError(res, '获取分类详情失败', error);
     }
@@ -213,12 +232,12 @@ const categoryController = {
         sortOrder = 0,
         isActive = true,
         color,
-        iconUrl
+        iconUrl,
       } = req.body;
 
       // 检查分类名称唯一性
       const existingCategory = await Category.findOne({
-        where: { name }
+        where: { name },
       });
 
       if (existingCategory) {
@@ -234,7 +253,8 @@ const categoryController = {
 
         // 检查层级深度（防止过深嵌套）
         const parentDepth = await parentCategory.getDepth();
-        if (parentDepth >= 4) { // 最多5层
+        if (parentDepth >= 4) {
+          // 最多5层
           return statusCode.clientError.badRequest(res, '分类层级不能超过5层');
         }
       }
@@ -248,24 +268,28 @@ const categoryController = {
         sortOrder: parseInt(sortOrder),
         isActive,
         color: color || null,
-        iconUrl: iconUrl || null
+        iconUrl: iconUrl || null,
       });
 
       // 重新获取完整的分类信息
       const completeCategory = await Category.findByPk(newCategory.id, {
-        include: [{
-          model: Category,
-          as: 'parent',
-          attributes: ['id', 'name', 'slug']
-        }]
+        include: [
+          {
+            model: Category,
+            as: 'parent',
+            attributes: ['id', 'name', 'slug'],
+          },
+        ],
       });
 
       statusCode.success.created(res, completeCategory, '分类创建成功');
-
     } catch (error) {
       if (error.name === 'SequelizeValidationError') {
         const validationErrors = error.errors.map(err => err.message);
-        return statusCode.clientError.badRequest(res, `数据验证失败: ${validationErrors.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `数据验证失败: ${validationErrors.join(', ')}`
+        );
       }
 
       if (error.name === 'SequelizeUniqueConstraintError') {
@@ -280,16 +304,8 @@ const categoryController = {
   updateCategory: async (req, res) => {
     try {
       const { id } = req.params;
-      const {
-        name,
-        slug,
-        description,
-        parentId,
-        sortOrder,
-        isActive,
-        color,
-        iconUrl
-      } = req.body;
+      const { name, slug, description, parentId, sortOrder, isActive, color, iconUrl } =
+        req.body;
 
       const category = await Category.findByPk(id);
       if (!category) {
@@ -300,11 +316,8 @@ const categoryController = {
       if (name && name !== category.name) {
         const existingCategory = await Category.findOne({
           where: {
-            [Op.and]: [
-              { name },
-              { id: { [Op.ne]: id } }
-            ]
-          }
+            [Op.and]: [{ name }, { id: { [Op.ne]: id } }],
+          },
         });
 
         if (existingCategory) {
@@ -330,7 +343,10 @@ const categoryController = {
           const descendants = await category.getDescendants();
           const descendantIds = descendants.map(d => d.id);
           if (descendantIds.includes(parseInt(parentId))) {
-            return statusCode.clientError.badRequest(res, '不能将分类设置为其子分类的父分类');
+            return statusCode.clientError.badRequest(
+              res,
+              '不能将分类设置为其子分类的父分类'
+            );
           }
 
           // 检查层级深度
@@ -358,19 +374,23 @@ const categoryController = {
       // 重新获取更新后的分类信息
       await category.reload();
       const completeCategory = await Category.findByPk(category.id, {
-        include: [{
-          model: Category,
-          as: 'parent',
-          attributes: ['id', 'name', 'slug']
-        }]
+        include: [
+          {
+            model: Category,
+            as: 'parent',
+            attributes: ['id', 'name', 'slug'],
+          },
+        ],
       });
 
       statusCode.success.ok(res, completeCategory, '分类更新成功');
-
     } catch (error) {
       if (error.name === 'SequelizeValidationError') {
         const validationErrors = error.errors.map(err => err.message);
-        return statusCode.clientError.badRequest(res, `数据验证失败: ${validationErrors.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `数据验证失败: ${validationErrors.join(', ')}`
+        );
       }
 
       if (error.name === 'SequelizeUniqueConstraintError') {
@@ -391,13 +411,13 @@ const categoryController = {
         include: [
           {
             model: Category,
-            as: 'children'
+            as: 'children',
           },
           {
             model: Post,
-            as: 'posts'
-          }
-        ]
+            as: 'posts',
+          },
+        ],
       });
 
       if (!category) {
@@ -406,7 +426,10 @@ const categoryController = {
 
       // 检查是否有子分类
       if (category.children && category.children.length > 0) {
-        return statusCode.clientError.badRequest(res, '该分类有子分类，请先删除所有子分类');
+        return statusCode.clientError.badRequest(
+          res,
+          '该分类有子分类，请先删除所有子分类'
+        );
       }
 
       // 处理分类下的文章
@@ -428,10 +451,7 @@ const categoryController = {
           await targetCategory.updatePostCount();
         } else {
           // 将文章的分类设置为null
-          await Post.update(
-            { categoryId: null },
-            { where: { categoryId: id } }
-          );
+          await Post.update({ categoryId: null }, { where: { categoryId: id } });
         }
       }
 
@@ -444,7 +464,6 @@ const categoryController = {
         await category.destroy();
         statusCode.success.ok(res, null, '分类已删除');
       }
-
     } catch (error) {
       statusCode.serverError.internalError(res, '删除分类失败', error);
     }
@@ -455,7 +474,6 @@ const categoryController = {
     try {
       const stats = await Category.getStats();
       statusCode.success.ok(res, stats, '获取分类统计信息成功');
-
     } catch (error) {
       statusCode.serverError.internalError(res, '获取分类统计信息失败', error);
     }
@@ -468,11 +486,14 @@ const categoryController = {
 
       const popularCategories = await Category.findPopular(parseInt(limit));
 
-      statusCode.success.ok(res, {
-        categories: popularCategories,
-        total: popularCategories.length
-      }, '获取热门分类成功');
-
+      statusCode.success.ok(
+        res,
+        {
+          categories: popularCategories,
+          total: popularCategories.length,
+        },
+        '获取热门分类成功'
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '获取热门分类失败', error);
     }
@@ -488,15 +509,18 @@ const categoryController = {
       }
 
       const categories = await Category.search(keyword, {
-        limit: parseInt(limit)
+        limit: parseInt(limit),
       });
 
-      statusCode.success.ok(res, {
-        categories,
-        keyword,
-        total: categories.length
-      }, '搜索分类成功');
-
+      statusCode.success.ok(
+        res,
+        {
+          categories,
+          keyword,
+          total: categories.length,
+        },
+        '搜索分类成功'
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '搜索分类失败', error);
     }
@@ -513,7 +537,10 @@ const categoryController = {
 
       const validOperations = ['activate', 'deactivate', 'delete', 'updateSortOrder'];
       if (!validOperations.includes(operation)) {
-        return statusCode.clientError.badRequest(res, `操作类型必须是以下之一: ${validOperations.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `操作类型必须是以下之一: ${validOperations.join(', ')}`
+        );
       }
 
       const results = [];
@@ -541,12 +568,16 @@ const categoryController = {
               // 检查是否有子分类或文章
               const children = await category.getChildren();
               const postCount = await Post.count({ where: { categoryId } });
-              
+
               if (children.length > 0 || postCount > 0) {
-                results.push({ categoryId, success: false, message: '分类有子分类或文章，无法删除' });
+                results.push({
+                  categoryId,
+                  success: false,
+                  message: '分类有子分类或文章，无法删除',
+                });
                 continue;
               }
-              
+
               await category.destroy();
               results.push({ categoryId, success: true, message: '分类已删除' });
               break;
@@ -568,20 +599,23 @@ const categoryController = {
       const successCount = results.filter(r => r.success).length;
       const failCount = results.length - successCount;
 
-      statusCode.success.ok(res, {
-        operation,
-        results,
-        summary: {
-          total: results.length,
-          success: successCount,
-          failed: failCount
-        }
-      }, `批量操作完成：成功 ${successCount} 个，失败 ${failCount} 个`);
-
+      statusCode.success.ok(
+        res,
+        {
+          operation,
+          results,
+          summary: {
+            total: results.length,
+            success: successCount,
+            failed: failCount,
+          },
+        },
+        `批量操作完成：成功 ${successCount} 个，失败 ${failCount} 个`
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '批量操作失败', error);
     }
-  }
+  },
 };
 
 module.exports = categoryController;

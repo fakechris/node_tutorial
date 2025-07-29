@@ -2,7 +2,7 @@
 const bcrypt = require('bcryptjs');
 
 module.exports = {
-  up: async (sequelize) => {
+  up: async sequelize => {
     const users = [
       {
         username: 'johndoe',
@@ -13,7 +13,7 @@ module.exports = {
         role: 'user',
         isActive: true,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       {
         username: 'janedoe',
@@ -24,7 +24,7 @@ module.exports = {
         role: 'moderator',
         isActive: true,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       {
         username: 'bobsmith',
@@ -35,7 +35,7 @@ module.exports = {
         role: 'user',
         isActive: true,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       {
         username: 'alicejohnson',
@@ -46,16 +46,16 @@ module.exports = {
         role: 'user',
         isActive: false, // 非活跃用户
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     ];
 
     await sequelize.bulkInsert('Users', users);
   },
 
-  down: async (sequelize) => {
+  down: async sequelize => {
     await sequelize.bulkDelete('Users', {
-      username: ['johndoe', 'janedoe', 'bobsmith', 'alicejohnson']
+      username: ['johndoe', 'janedoe', 'bobsmith', 'alicejohnson'],
     });
-  }
+  },
 };

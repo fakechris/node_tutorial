@@ -1,0 +1,61 @@
+# 开发环境 Docker Compose 配置
+version: '3.8'
+
+services:
+  # 应用服务 (开发模式)
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: back-tutor-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - SQLITE_DATABASE_PATH=/app/database/tutorial.db
+      - JWT_SECRET=dev-jwt-secret-not-for-production
+      - SESSION_SECRET=dev-session-secret-not-for-production
+      - LOG_LEVEL=debug
+      - FEATURES_DEBUG_PANEL=true
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - dev-database:/app/database
+      - dev-logs:/app/logs
+    command: npm run dev
+    networks:
+      - back-tutor-dev-network
+
+  # 开发数据库 (可选PostgreSQL)
+  dev-db:
+    image: postgres:15-alpine
+    container_name: back-tutor-dev-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=back_tutor_dev
+      - POSTGRES_USER=dev_user
+      - POSTGRES_PASSWORD=dev_password
+    volumes:
+      - dev-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - back-tutor-dev-network
+    profiles:
+      - with-postgres
+
+# 开发数据卷
+volumes:
+  dev-database:
+    driver: local
+  dev-logs:
+    driver: local
+  dev-postgres-data:
+    driver: local
+
+# 开发网络
+networks:
+  back-tutor-dev-network:
+    driver: bridge

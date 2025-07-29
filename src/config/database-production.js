@@ -7,7 +7,7 @@ const config = initializeConfig();
 // 生产环境数据库连接配置
 const createProductionSequelize = () => {
   const dbConfig = config.database;
-  
+
   // 优先使用PostgreSQL或MySQL，SQLite仅用于演示
   if (dbConfig.url) {
     // 使用数据库URL（推荐用于生产环境）
@@ -18,13 +18,13 @@ const createProductionSequelize = () => {
         max: dbConfig.pool.max,
         min: dbConfig.pool.min,
         acquire: dbConfig.pool.acquire,
-        idle: dbConfig.pool.idle
+        idle: dbConfig.pool.idle,
       },
       define: {
         timestamps: true,
         paranoid: true,
         underscored: true,
-        freezeTableName: true
+        freezeTableName: true,
       },
       dialectOptions: getDialectOptions(),
       retry: {
@@ -43,10 +43,10 @@ const createProductionSequelize = () => {
           /SequelizeHostNotFoundError/,
           /SequelizeHostNotReachableError/,
           /SequelizeInvalidConnectionError/,
-          /SequelizeConnectionTimedOutError/
+          /SequelizeConnectionTimedOutError/,
         ],
-        max: 5
-      }
+        max: 5,
+      },
     });
   } else {
     // 回退到SQLite（仅用于开发和演示）
@@ -59,20 +59,20 @@ const createProductionSequelize = () => {
         max: 5, // SQLite并发连接限制
         min: 0,
         acquire: 30000,
-        idle: 10000
+        idle: 10000,
       },
       define: {
         timestamps: true,
         paranoid: true,
         underscored: true,
-        freezeTableName: true
-      }
+        freezeTableName: true,
+      },
     });
   }
 };
 
 // 从URL检测数据库类型
-const detectDialectFromUrl = (url) => {
+const detectDialectFromUrl = url => {
   if (url.startsWith('postgresql://') || url.startsWith('postgres://')) {
     return 'postgres';
   } else if (url.startsWith('mysql://')) {
@@ -91,31 +91,31 @@ const getDialectOptions = () => {
     return {
       ssl: {
         require: true,
-        rejectUnauthorized: false // 在生产环境中可能需要调整
+        rejectUnauthorized: false, // 在生产环境中可能需要调整
       },
       // PostgreSQL特定选项
       native: false,
       // MySQL特定选项
       charset: 'utf8mb4',
-      collate: 'utf8mb4_unicode_ci'
+      collate: 'utf8mb4_unicode_ci',
     };
   }
   return {};
 };
 
 // 生产环境数据库健康检查
-const productionHealthCheck = async (sequelize) => {
+const productionHealthCheck = async sequelize => {
   try {
     await sequelize.authenticate();
-    
+
     // 执行简单查询测试
     const [results] = await sequelize.query('SELECT 1 as test', {
-      type: Sequelize.QueryTypes.SELECT
+      type: Sequelize.QueryTypes.SELECT,
     });
-    
+
     // 检查连接池状态
     const poolStatus = sequelize.connectionManager.pool;
-    
+
     return {
       status: 'healthy',
       connection: 'active',
@@ -124,16 +124,16 @@ const productionHealthCheck = async (sequelize) => {
         size: poolStatus?.size || 0,
         available: poolStatus?.available || 0,
         borrowed: poolStatus?.borrowed || 0,
-        pending: poolStatus?.pending || 0
+        pending: poolStatus?.pending || 0,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   } catch (error) {
     return {
       status: 'unhealthy',
       connection: 'failed',
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 };
@@ -143,20 +143,20 @@ const safeSync = async (sequelize, options = {}) => {
   try {
     const defaultOptions = {
       force: false, // 生产环境永远不使用force
-      alter: false  // 生产环境谨慎使用alter
+      alter: false, // 生产环境谨慎使用alter
     };
-    
+
     const syncOptions = { ...defaultOptions, ...options };
-    
+
     // 生产环境安全检查
     if (config.isProduction && (syncOptions.force || syncOptions.alter)) {
       console.warn('⚠️  生产环境不建议使用force或alter同步，请使用迁移脚本');
       return false;
     }
-    
+
     console.log('🔄 开始数据库同步...');
     await sequelize.sync(syncOptions);
-    
+
     if (syncOptions.force) {
       console.log('⚠️  数据库表已重建（所有数据已清空）');
     } else if (syncOptions.alter) {
@@ -164,7 +164,7 @@ const safeSync = async (sequelize, options = {}) => {
     } else {
       console.log('✅ 数据库模型同步完成');
     }
-    
+
     return true;
   } catch (error) {
     console.error('❌ 数据库同步失败:', error.message);
@@ -173,7 +173,7 @@ const safeSync = async (sequelize, options = {}) => {
 };
 
 // 优雅关闭数据库连接
-const gracefulShutdown = async (sequelize) => {
+const gracefulShutdown = async sequelize => {
   try {
     console.log('🔒 正在关闭数据库连接...');
     await sequelize.close();
@@ -185,33 +185,36 @@ const gracefulShutdown = async (sequelize) => {
 };
 
 // 数据库性能监控
-const monitorDatabasePerformance = (sequelize) => {
+const monitorDatabasePerformance = sequelize => {
   const originalQuery = sequelize.query;
-  
-  sequelize.query = function(sql, options = {}) {
+
+  sequelize.query = function (sql, options = {}) {
     const startTime = Date.now();
-    
-    return originalQuery.call(this, sql, options).then(result => {
-      const duration = Date.now() - startTime;
-      
-      // 记录慢查询
-      if (duration > 1000) {
-        console.warn(`🐌 慢查询检测 (${duration}ms):`, {
+
+    return originalQuery
+      .call(this, sql, options)
+      .then(result => {
+        const duration = Date.now() - startTime;
+
+        // 记录慢查询
+        if (duration > 1000) {
+          console.warn(`🐌 慢查询检测 (${duration}ms):`, {
+            sql: sql.substring(0, 100),
+            duration,
+            timestamp: new Date().toISOString(),
+          });
+        }
+
+        return result;
+      })
+      .catch(error => {
+        console.error('❌ 数据库查询错误:', {
           sql: sql.substring(0, 100),
-          duration,
-          timestamp: new Date().toISOString()
+          error: error.message,
+          timestamp: new Date().toISOString(),
         });
-      }
-      
-      return result;
-    }).catch(error => {
-      console.error('❌ 数据库查询错误:', {
-        sql: sql.substring(0, 100),
-        error: error.message,
-        timestamp: new Date().toISOString()
+        throw error;
       });
-      throw error;
-    });
   };
 };
 
@@ -229,5 +232,5 @@ module.exports = {
   safeSync,
   gracefulShutdown,
   monitorDatabasePerformance,
-  Sequelize
+  Sequelize,
 };

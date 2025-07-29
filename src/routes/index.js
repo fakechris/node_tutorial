@@ -25,7 +25,7 @@ router.get('/', (req, res) => {
         'POST /api/users': '创建新用户',
         'PUT /api/users/:id': '更新用户信息',
         'DELETE /api/users/:id': '删除用户',
-        'PATCH /api/users/:id/role': '更新用户角色'
+        'PATCH /api/users/:id/role': '更新用户角色',
       },
       posts: {
         'GET /api/posts': '获取文章列表（支持分页、过滤、排序）',
@@ -34,13 +34,13 @@ router.get('/', (req, res) => {
         'PUT /api/posts/:id': '更新文章',
         'DELETE /api/posts/:id': '删除文章',
         'GET /api/posts/:postId/comments': '获取文章评论',
-        'POST /api/posts/:postId/comments': '创建文章评论'
+        'POST /api/posts/:postId/comments': '创建文章评论',
       },
       demo: {
         'GET /api/demo/status-codes': 'HTTP状态码演示',
         'GET /api/demo/headers-demo': 'HTTP头部演示',
         'GET /api/demo/status/*': '各种状态码示例',
-        'GET /api/demo/headers/*': '各种头部设置示例'
+        'GET /api/demo/headers/*': '各种头部设置示例',
       },
       auth: {
         'POST /api/auth/register': '用户注册',
@@ -50,7 +50,7 @@ router.get('/', (req, res) => {
         'POST /api/auth/refresh': '刷新令牌（需认证）',
         'POST /api/auth/logout': '用户登出（需认证）',
         'GET /api/auth/users': '获取所有用户（管理员）',
-        'GET /api/auth/demo/*': '权限演示端点'
+        'GET /api/auth/demo/*': '权限演示端点',
       },
       database: {
         'GET /api/db/health': '数据库健康检查',
@@ -59,7 +59,7 @@ router.get('/', (req, res) => {
         'POST /api/db/init': '初始化数据库（管理员）',
         'POST /api/db/init-dev': '初始化数据库（开发模式，无需认证）',
         'POST /api/db/sample-data': '创建示例数据（管理员）',
-        'DELETE /api/db/clear-all': '清空所有数据（管理员）'
+        'DELETE /api/db/clear-all': '清空所有数据（管理员）',
       },
       categories: {
         'GET /api/categories': '获取分类列表（支持分页、搜索、层级）',
@@ -71,7 +71,7 @@ router.get('/', (req, res) => {
         'POST /api/categories': '创建新分类（管理员/版主）',
         'PUT /api/categories/:id': '更新分类（管理员/版主）',
         'DELETE /api/categories/:id': '删除分类（管理员）',
-        'POST /api/categories/batch': '批量操作分类（管理员/版主）'
+        'POST /api/categories/batch': '批量操作分类（管理员/版主）',
       },
       debug: {
         'GET /api/debug/health': '系统健康检查（公开）',
@@ -83,8 +83,8 @@ router.get('/', (req, res) => {
         'GET /api/debug/logs': '日志查看（需认证）',
         'GET /api/debug/config': '系统配置（需认证）',
         'POST /api/debug/reset': '重置统计（需认证）',
-        'GET /api/debug/dashboard': '调试面板（开发环境）'
-      }
+        'GET /api/debug/dashboard': '调试面板（开发环境）',
+      },
     },
     features: {
       pagination: '分页查询支持',
@@ -111,10 +111,10 @@ router.get('/', (req, res) => {
       performanceMonitoring: '实时性能监控',
       errorMonitoring: '错误监控和统计',
       debugTools: '调试工具和开发辅助',
-      healthChecks: '系统健康检查'
+      healthChecks: '系统健康检查',
     },
     documentation: 'https://github.com/back-tutor/node-backend-tutorial',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -128,9 +128,9 @@ router.get('/stats', (req, res) => {
       userRoutes: 6,
       postRoutes: 6,
       features: ['CRUD', 'Pagination', 'Filtering', 'Sorting', 'Validation'],
-      registeredAt: new Date().toISOString()
+      registeredAt: new Date().toISOString(),
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 

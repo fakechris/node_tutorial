@@ -6,57 +6,57 @@ module.exports = {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
-        allowNull: false
+        allowNull: false,
       },
       username: {
         type: DataTypes.STRING(50),
         allowNull: false,
-        unique: true
+        unique: true,
       },
       email: {
         type: DataTypes.STRING(255),
         allowNull: false,
         unique: true,
         validate: {
-          isEmail: true
-        }
+          isEmail: true,
+        },
       },
       password: {
         type: DataTypes.STRING(255),
-        allowNull: false
+        allowNull: false,
       },
       firstName: {
         type: DataTypes.STRING(50),
-        allowNull: true
+        allowNull: true,
       },
       lastName: {
         type: DataTypes.STRING(50),
-        allowNull: true
+        allowNull: true,
       },
       role: {
         type: DataTypes.ENUM('user', 'moderator', 'admin'),
         defaultValue: 'user',
-        allowNull: false
+        allowNull: false,
       },
       isActive: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
-        allowNull: false
+        allowNull: false,
       },
       lastLoginAt: {
         type: DataTypes.DATE,
-        allowNull: true
+        allowNull: true,
       },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: DataTypes.NOW
+        defaultValue: DataTypes.NOW,
       },
       updatedAt: {
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: DataTypes.NOW
-      }
+        defaultValue: DataTypes.NOW,
+      },
     });
 
     // 添加索引
@@ -66,7 +66,7 @@ module.exports = {
     await sequelize.addIndex('Users', ['isActive']);
   },
 
-  down: async (sequelize) => {
+  down: async sequelize => {
     await sequelize.dropTable('Users');
-  }
+  },
 };

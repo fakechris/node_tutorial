@@ -28,25 +28,29 @@ app.use(performanceMonitor);
 
 // 3. 生产环境启用压缩
 if (config.server.compression) {
-  app.use(compression({
-    filter: (req, res) => {
-      if (req.headers['x-no-compression']) {
-        return false;
-      }
-      return compression.filter(req, res);
-    },
-    level: 6,
-    threshold: 1024
-  }));
+  app.use(
+    compression({
+      filter: (req, res) => {
+        if (req.headers['x-no-compression']) {
+          return false;
+        }
+        return compression.filter(req, res);
+      },
+      level: 6,
+      threshold: 1024,
+    })
+  );
 }
 
 // 4. CORS中间件（使用环境配置）
-app.use(cors({
-  origin: config.security.cors.origin,
-  methods: config.security.cors.methods,
-  allowedHeaders: config.security.cors.allowedHeaders,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: config.security.cors.origin,
+    methods: config.security.cors.methods,
+    allowedHeaders: config.security.cors.allowedHeaders,
+    credentials: true,
+  })
+);
 
 // 5. 安全头部中间件
 app.use(headers.security);
@@ -55,17 +59,21 @@ app.use(headers.security);
 app.use(headers.requestTracking);
 
 // 7. 基础解析中间件（使用配置限制）
-app.use(express.json({ 
-  limit: config.server.bodyLimit,
-  verify: (req, res, buf) => {
-    // 添加原始body用于某些特殊场景
-    req.rawBody = buf;
-  }
-}));
-app.use(express.urlencoded({ 
-  extended: true, 
-  limit: config.server.bodyLimit 
-}));
+app.use(
+  express.json({
+    limit: config.server.bodyLimit,
+    verify: (req, res, buf) => {
+      // 添加原始body用于某些特殊场景
+      req.rawBody = buf;
+    },
+  })
+);
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: config.server.bodyLimit,
+  })
+);
 
 // 健康检查路由
 app.get('/health', (req, res) => {
@@ -73,7 +81,7 @@ app.get('/health', (req, res) => {
     status: 'success',
     message: 'Node.js后端服务正常运行',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
   });
 });
 
@@ -110,7 +118,7 @@ app.get('/', (req, res) => {
       requestTracking: '请求追踪和关联ID',
       performanceMonitoring: '性能监控和指标收集',
       errorMonitoring: '错误监控和统计',
-      debugDashboard: '实时调试面板'
+      debugDashboard: '实时调试面板',
     },
     apiEndpoint: '/api',
     authEndpoint: '/api/auth',
@@ -118,25 +126,29 @@ app.get('/', (req, res) => {
     databaseEndpoint: '/api/db',
     debugEndpoint: '/api/debug',
     debugDashboard: '/api/debug/dashboard',
-    documentation: 'https://github.com/back-tutor/node-backend-tutorial'
+    documentation: 'https://github.com/back-tutor/node-backend-tutorial',
   });
 });
 
 // 测试中间件的演示路由
-app.post('/api/test/validation', validateRequest({
-  body: {
-    username: { required: true, type: 'string', minLength: 3, maxLength: 20 },
-    email: { required: true, type: 'string', pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
-    age: { required: false, type: 'number' }
+app.post(
+  '/api/test/validation',
+  validateRequest({
+    body: {
+      username: { required: true, type: 'string', minLength: 3, maxLength: 20 },
+      email: { required: true, type: 'string', pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
+      age: { required: false, type: 'number' },
+    },
+  }),
+  (req, res) => {
+    res.json({
+      status: 'success',
+      message: '参数验证通过',
+      data: req.body,
+      timestamp: new Date().toISOString(),
+    });
   }
-}), (req, res) => {
-  res.json({
-    status: 'success',
-    message: '参数验证通过',
-    data: req.body,
-    timestamp: new Date().toISOString()
-  });
-});
+);
 
 // 测试错误处理的路由
 app.get('/api/test/error', (req, res, next) => {
@@ -173,20 +185,22 @@ const server = app.listen(config.server.port, config.server.host, () => {
     compression: config.server.compression,
     monitoring: config.monitoring.enabled,
     debugEnabled: config.features.debugPanel,
-    startTime: new Date().toISOString()
+    startTime: new Date().toISOString(),
   });
-  
+
   console.log(`🚀 Node.js后端服务启动成功！`);
   console.log(`📍 服务地址: http://${config.server.host}:${config.server.port}`);
   console.log(`🌍 运行环境: ${config.env}`);
   console.log(`📊 压缩功能: ${config.server.compression ? '启用' : '禁用'}`);
   console.log(`🔍 监控功能: ${config.monitoring.enabled ? '启用' : '禁用'}`);
   console.log(`⏰ 启动时间: ${new Date().toLocaleString('zh-CN')}`);
-  
+
   if (config.features.debugPanel) {
-    console.log(`🔍 调试面板: http://${config.server.host}:${config.server.port}/api/debug/dashboard`);
+    console.log(
+      `🔍 调试面板: http://${config.server.host}:${config.server.port}/api/debug/dashboard`
+    );
   }
-  
+
   if (config.isProduction) {
     console.log(`🔒 生产模式：调试功能已禁用，安全策略已启用`);
   }
@@ -199,7 +213,7 @@ server.timeout = config.server.timeout;
 process.on('SIGTERM', () => {
   logger.info('Received SIGTERM signal, shutting down gracefully');
   console.log('💤 收到SIGTERM信号，准备关闭服务器...');
-  
+
   server.close(() => {
     logger.info('Server closed successfully');
     console.log('✅ 服务器已安全关闭');
@@ -210,7 +224,7 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   logger.info('Received SIGINT signal, shutting down gracefully');
   console.log('💤 收到SIGINT信号，准备关闭服务器...');
-  
+
   server.close(() => {
     logger.info('Server closed successfully');
     console.log('✅ 服务器已安全关闭');

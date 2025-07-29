@@ -6,75 +6,75 @@ module.exports = {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
-        allowNull: false
+        allowNull: false,
       },
       content: {
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: false,
       },
       status: {
         type: DataTypes.ENUM('pending', 'approved', 'rejected', 'spam'),
         defaultValue: 'pending',
-        allowNull: false
+        allowNull: false,
       },
       authorId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
           model: 'Users',
-          key: 'id'
+          key: 'id',
         },
         onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        onDelete: 'CASCADE',
       },
       postId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
           model: 'Posts',
-          key: 'id'
+          key: 'id',
         },
         onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        onDelete: 'CASCADE',
       },
       parentId: {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
           model: 'Comments',
-          key: 'id'
+          key: 'id',
         },
         onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        onDelete: 'CASCADE',
       },
       likeCount: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
-        allowNull: false
+        allowNull: false,
       },
       isEdited: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
-        allowNull: false
+        allowNull: false,
       },
       ipAddress: {
         type: DataTypes.STRING(45),
-        allowNull: true
+        allowNull: true,
       },
       userAgent: {
         type: DataTypes.STRING(500),
-        allowNull: true
+        allowNull: true,
       },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: DataTypes.NOW
+        defaultValue: DataTypes.NOW,
       },
       updatedAt: {
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: DataTypes.NOW
-      }
+        defaultValue: DataTypes.NOW,
+      },
     });
 
     // 添加索引
@@ -85,7 +85,7 @@ module.exports = {
     await sequelize.addIndex('Comments', ['createdAt']);
   },
 
-  down: async (sequelize) => {
+  down: async sequelize => {
     await sequelize.dropTable('Comments');
-  }
+  },
 };

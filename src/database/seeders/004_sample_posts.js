@@ -1,6 +1,6 @@
 // 种子数据：示例文章
 module.exports = {
-  up: async (sequelize) => {
+  up: async sequelize => {
     const posts = [
       {
         title: 'Node.js 后端开发入门指南',
@@ -39,7 +39,8 @@ app.listen(3000, () => {
 \`\`\`
 
 这篇文章将帮助你快速上手 Node.js 后端开发。`,
-        excerpt: 'Node.js 是一个强大的 JavaScript 运行环境，本文介绍了 Node.js 的核心概念和基础用法。',
+        excerpt:
+          'Node.js 是一个强大的 JavaScript 运行环境，本文介绍了 Node.js 的核心概念和基础用法。',
         slug: 'nodejs-backend-guide',
         status: 'published',
         tags: JSON.stringify(['Node.js', '后端开发', '入门教程']),
@@ -48,7 +49,7 @@ app.listen(3000, () => {
         categoryId: 4, // Node.js分类
         publishedAt: new Date('2025-01-15'),
         createdAt: new Date('2025-01-15'),
-        updatedAt: new Date('2025-01-15')
+        updatedAt: new Date('2025-01-15'),
       },
       {
         title: 'Express.js 中间件深度解析',
@@ -97,7 +98,8 @@ app.use(logger);
 \`\`\`
 
 通过合理使用中间件，可以构建出高效、可维护的 Express.js 应用程序。`,
-        excerpt: '深入理解 Express.js 中间件的工作原理和使用方法，包括应用级、路由级和错误处理中间件。',
+        excerpt:
+          '深入理解 Express.js 中间件的工作原理和使用方法，包括应用级、路由级和错误处理中间件。',
         slug: 'express-middleware-deep-dive',
         status: 'published',
         tags: JSON.stringify(['Express.js', '中间件', 'Node.js']),
@@ -106,7 +108,7 @@ app.use(logger);
         categoryId: 4, // Node.js分类
         publishedAt: new Date('2025-01-20'),
         createdAt: new Date('2025-01-20'),
-        updatedAt: new Date('2025-01-20')
+        updatedAt: new Date('2025-01-20'),
       },
       {
         title: 'RESTful API 设计最佳实践',
@@ -158,7 +160,8 @@ DELETE /api/users/123      # 删除用户
 - **500 Internal Server Error**: 服务器内部错误
 
 遵循这些最佳实践，可以设计出易于理解和使用的 RESTful API。`,
-        excerpt: '了解 RESTful API 设计的核心原则和最佳实践，包括HTTP方法使用、URL设计和状态码规范。',
+        excerpt:
+          '了解 RESTful API 设计的核心原则和最佳实践，包括HTTP方法使用、URL设计和状态码规范。',
         slug: 'restful-api-best-practices',
         status: 'published',
         tags: JSON.stringify(['RESTful API', 'API设计', '后端开发']),
@@ -167,7 +170,7 @@ DELETE /api/users/123      # 删除用户
         categoryId: 3, // 后端开发分类
         publishedAt: new Date('2025-01-25'),
         createdAt: new Date('2025-01-25'),
-        updatedAt: new Date('2025-01-25')
+        updatedAt: new Date('2025-01-25'),
       },
       {
         title: '数据库优化策略与技巧',
@@ -235,7 +238,8 @@ const pool = new Pool({
 3. **页面缓存**: 缓存整个页面
 
 通过合理的优化策略，可以显著提升数据库性能和应用响应速度。`,
-        excerpt: '探讨数据库性能优化的各种策略，包括查询优化、索引使用、连接池配置和缓存策略。',
+        excerpt:
+          '探讨数据库性能优化的各种策略，包括查询优化、索引使用、连接池配置和缓存策略。',
         slug: 'database-optimization-strategies',
         status: 'draft', // 草稿状态
         tags: JSON.stringify(['数据库', '性能优化', 'SQL']),
@@ -244,21 +248,21 @@ const pool = new Pool({
         categoryId: 5, // 数据库分类
         publishedAt: null,
         createdAt: new Date('2025-01-28'),
-        updatedAt: new Date('2025-01-28')
-      }
+        updatedAt: new Date('2025-01-28'),
+      },
     ];
 
     await sequelize.bulkInsert('Posts', posts);
   },
 
-  down: async (sequelize) => {
+  down: async sequelize => {
     await sequelize.bulkDelete('Posts', {
       slug: [
         'nodejs-backend-guide',
-        'express-middleware-deep-dive', 
+        'express-middleware-deep-dive',
         'restful-api-best-practices',
-        'database-optimization-strategies'
-      ]
+        'database-optimization-strategies',
+      ],
     });
-  }
+  },
 };

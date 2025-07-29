@@ -1,0 +1,108 @@
+# Node.js 后端教程 - Docker Compose 配置
+version: '3.8'
+
+services:
+  # 应用服务
+  app:
+    build: .
+    container_name: back-tutor-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:password@db:5432/back_tutor
+      - JWT_SECRET=your-super-secure-jwt-secret-key-change-in-production
+      - SESSION_SECRET=your-super-secure-session-secret-change-in-production
+      - LOG_LEVEL=info
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - app-logs:/app/logs
+      - app-uploads:/app/uploads
+    depends_on:
+      - db
+      - redis
+    networks:
+      - back-tutor-network
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL 数据库
+  db:
+    image: postgres:15-alpine
+    container_name: back-tutor-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=back_tutor
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - back-tutor-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: back-tutor-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redis-password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - back-tutor-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: back-tutor-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - back-tutor-network
+
+# 数据卷
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  app-logs:
+    driver: local
+  app-uploads:
+    driver: local
+  nginx-logs:
+    driver: local
+
+# 网络
+networks:
+  back-tutor-network:
+    driver: bridge

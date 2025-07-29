@@ -8,11 +8,11 @@ const Op = {
   like: Symbol('like'),
   ne: Symbol('ne'),
   overlap: Symbol('overlap'),
-  notIn: Symbol('notIn')
+  notIn: Symbol('notIn'),
 };
 
 // 模拟数据存储
-let mockData = {
+const mockData = {
   users: [
     {
       id: 1,
@@ -26,8 +26,8 @@ let mockData = {
       isActive: true,
       createdAt: new Date('2024-01-01'),
       updatedAt: new Date('2024-01-01'),
-      lastLoginAt: null
-    }
+      lastLoginAt: null,
+    },
   ],
   posts: [],
   comments: [],
@@ -43,9 +43,9 @@ let mockData = {
       isActive: true,
       color: '#007bff',
       createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
-    }
-  ]
+      updatedAt: new Date('2024-01-01'),
+    },
+  ],
 };
 
 // 模拟Sequelize实例
@@ -63,19 +63,19 @@ const sequelize = {
     return Promise.resolve([{ health_check: 1 }]);
   },
   getQueryInterface: () => ({
-    showAllTables: async () => ['users', 'posts', 'comments', 'categories']
+    showAllTables: async () => ['users', 'posts', 'comments', 'categories'],
   }),
   QueryTypes: {
-    SELECT: 'SELECT'
+    SELECT: 'SELECT',
   },
   options: {
-    pool: { max: 5, min: 0 }
+    pool: { max: 5, min: 0 },
   },
   connectionManager: {
-    pool: { size: 1 }
+    pool: { size: 1 },
   },
   models: {},
-  Op
+  Op,
 };
 
 // 测试数据库连接
@@ -83,17 +83,17 @@ const testConnection = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ 数据库连接成功！');
-    
+
     const dbInfo = {
       dialect: 'sqlite',
       version: '3.x (mock)',
       config: {
         host: 'local file',
         database: './database/tutorial.db',
-        pool: { max: 5, min: 0 }
-      }
+        pool: { max: 5, min: 0 },
+      },
     };
-    
+
     console.log('📊 数据库信息:', JSON.stringify(dbInfo, null, 2));
     return true;
   } catch (error) {
@@ -107,14 +107,14 @@ const syncDatabase = async (options = {}) => {
   try {
     const defaultOptions = {
       force: false,
-      alter: false
+      alter: false,
     };
-    
+
     const syncOptions = { ...defaultOptions, ...options };
-    
+
     console.log('🔄 开始同步数据库模型...');
     await sequelize.sync(syncOptions);
-    
+
     if (syncOptions.force) {
       console.log('⚠️  数据库表已重建（所有数据已清空）');
       // 重置模拟数据
@@ -125,7 +125,7 @@ const syncDatabase = async (options = {}) => {
     } else {
       console.log('✅ 数据库模型同步完成');
     }
-    
+
     return true;
   } catch (error) {
     console.error('❌ 数据库同步失败:', error.message);
@@ -146,20 +146,20 @@ const closeConnection = async () => {
 const healthCheck = async () => {
   try {
     await sequelize.authenticate();
-    
+
     return {
       status: 'healthy',
       connection: 'active',
       timestamp: new Date().toISOString(),
       test_query: true,
-      mode: 'mock'
+      mode: 'mock',
     };
   } catch (error) {
     return {
       status: 'unhealthy',
       connection: 'failed',
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 };
@@ -174,24 +174,24 @@ const getStats = async () => {
       connections: {
         max: 5,
         min: 0,
-        active: 1
+        active: 1,
       },
       uptime: process.uptime(),
       recordCounts: {
         users: mockData.users.length,
         posts: mockData.posts.length,
         comments: mockData.comments.length,
-        categories: mockData.categories.length
+        categories: mockData.categories.length,
       },
       mode: 'mock',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    
+
     return stats;
   } catch (error) {
     return {
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 };
@@ -199,9 +199,9 @@ const getStats = async () => {
 // 模拟Sequelize类
 const Sequelize = {
   QueryTypes: {
-    SELECT: 'SELECT'
+    SELECT: 'SELECT',
   },
-  Op
+  Op,
 };
 
 module.exports = {
@@ -212,5 +212,5 @@ module.exports = {
   healthCheck,
   getStats,
   Sequelize,
-  mockData // 导出模拟数据供控制器使用
+  mockData, // 导出模拟数据供控制器使用
 };

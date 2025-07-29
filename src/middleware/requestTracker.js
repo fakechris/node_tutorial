@@ -6,14 +6,17 @@ const logger = require('../config/logger');
 const requestContexts = new Map();
 
 // 清理过期的请求上下文（每5分钟）
-setInterval(() => {
-  const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-  for (const [traceId, context] of requestContexts.entries()) {
-    if (context.startTime < fiveMinutesAgo) {
-      requestContexts.delete(traceId);
+setInterval(
+  () => {
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+    for (const [traceId, context] of requestContexts.entries()) {
+      if (context.startTime < fiveMinutesAgo) {
+        requestContexts.delete(traceId);
+      }
     }
-  }
-}, 5 * 60 * 1000);
+  },
+  5 * 60 * 1000
+);
 
 // 请求跟踪中间件
 const requestTracker = (req, res, next) => {
@@ -21,14 +24,14 @@ const requestTracker = (req, res, next) => {
   const traceId = req.headers['x-trace-id'] || uuidv4();
   const startTime = Date.now();
   const startTimestamp = new Date().toISOString();
-  
+
   // 将trace ID添加到请求对象
   req.traceId = traceId;
   req.startTime = startTime;
-  
+
   // 将trace ID添加到响应头
   res.setHeader('X-Trace-ID', traceId);
-  
+
   // 创建请求上下文
   const context = {
     traceId,
@@ -40,11 +43,11 @@ const requestTracker = (req, res, next) => {
     ip: req.ip || req.connection.remoteAddress,
     userId: null, // 将在认证后设置
     dbQueries: [],
-    events: []
+    events: [],
   };
-  
+
   requestContexts.set(traceId, context);
-  
+
   // 记录请求开始
   logger.request('Request started', {
     traceId,
@@ -52,9 +55,9 @@ const requestTracker = (req, res, next) => {
     url: req.url,
     userAgent: req.headers['user-agent'],
     ip: context.ip,
-    headers: sanitizeHeaders(req.headers)
+    headers: sanitizeHeaders(req.headers),
   });
-  
+
   // 扩展请求对象的方法
   req.addEvent = (event, data = {}) => {
     const context = requestContexts.get(traceId);
@@ -63,18 +66,18 @@ const requestTracker = (req, res, next) => {
         timestamp: new Date().toISOString(),
         event,
         data,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
     }
-    
+
     logger.debug(`Event: ${event}`, {
       traceId,
       event,
       data,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
     });
   };
-  
+
   req.addDbQuery = (query, duration, result = {}) => {
     const context = requestContexts.get(traceId);
     if (context) {
@@ -84,44 +87,44 @@ const requestTracker = (req, res, next) => {
         duration,
         result: {
           rows: result.rows || result.length || 0,
-          fields: result.fields ? result.fields.length : 0
-        }
+          fields: result.fields ? result.fields.length : 0,
+        },
       });
     }
-    
+
     logger.db('Database query executed', {
       traceId,
       query: sanitizeQuery(query),
       duration,
-      rows: result.rows || result.length || 0
+      rows: result.rows || result.length || 0,
     });
   };
-  
-  req.setUserId = (userId) => {
+
+  req.setUserId = userId => {
     const context = requestContexts.get(traceId);
     if (context) {
       context.userId = userId;
     }
   };
-  
+
   req.getContext = () => {
     return requestContexts.get(traceId);
   };
-  
+
   // 监听响应结束
   const originalEnd = res.end;
-  res.end = function(chunk, encoding) {
+  res.end = function (chunk, encoding) {
     const endTime = Date.now();
     const duration = endTime - startTime;
     const context = requestContexts.get(traceId);
-    
+
     if (context) {
       context.endTime = endTime;
       context.duration = duration;
       context.statusCode = res.statusCode;
       context.responseSize = res.get('content-length') || 0;
     }
-    
+
     // 记录请求完成
     logger.response('Request completed', {
       traceId,
@@ -132,9 +135,9 @@ const requestTracker = (req, res, next) => {
       responseSize: res.get('content-length') || 0,
       userId: context?.userId,
       dbQueriesCount: context?.dbQueries.length || 0,
-      eventsCount: context?.events.length || 0
+      eventsCount: context?.events.length || 0,
     });
-    
+
     // 性能监控告警
     if (duration > 5000) {
       logger.performance('Slow request detected', {
@@ -142,24 +145,24 @@ const requestTracker = (req, res, next) => {
         method: req.method,
         url: req.url,
         duration,
-        userId: context?.userId
+        userId: context?.userId,
       });
     }
-    
+
     if (context?.dbQueries.length > 10) {
       logger.performance('High database query count', {
         traceId,
         method: req.method,
         url: req.url,
         queryCount: context.dbQueries.length,
-        userId: context?.userId
+        userId: context?.userId,
       });
     }
-    
+
     // 调用原始的end方法
     originalEnd.call(this, chunk, encoding);
   };
-  
+
   next();
 };
 
@@ -167,13 +170,13 @@ const requestTracker = (req, res, next) => {
 function sanitizeHeaders(headers) {
   const sanitized = { ...headers };
   const sensitiveHeaders = ['authorization', 'cookie', 'x-api-key', 'x-auth-token'];
-  
+
   for (const header of sensitiveHeaders) {
     if (sanitized[header]) {
       sanitized[header] = '[REDACTED]';
     }
   }
-  
+
   return sanitized;
 }
 
@@ -182,7 +185,7 @@ function sanitizeQuery(query) {
   if (typeof query !== 'string') {
     return query;
   }
-  
+
   // 简单的密码字段替换
   return query.replace(
     /(password|secret|token)\s*=\s*['"][^'"]*['"]/gi,
@@ -201,12 +204,12 @@ requestTracker.getActiveRequests = () => {
     statusCode: context.statusCode,
     userId: context.userId,
     dbQueries: context.dbQueries.length,
-    events: context.events.length
+    events: context.events.length,
   }));
 };
 
 // 获取请求详情
-requestTracker.getRequestDetails = (traceId) => {
+requestTracker.getRequestDetails = traceId => {
   return requestContexts.get(traceId);
 };
 
@@ -214,28 +217,28 @@ requestTracker.getRequestDetails = (traceId) => {
 requestTracker.getStats = () => {
   const contexts = Array.from(requestContexts.values());
   const completedRequests = contexts.filter(c => c.endTime);
-  
+
   if (completedRequests.length === 0) {
     return {
       totalRequests: 0,
       averageResponseTime: 0,
       slowRequests: 0,
       errorRequests: 0,
-      activeRequests: contexts.length
+      activeRequests: contexts.length,
     };
   }
-  
+
   const totalDuration = completedRequests.reduce((sum, c) => sum + c.duration, 0);
   const slowRequests = completedRequests.filter(c => c.duration > 5000).length;
   const errorRequests = completedRequests.filter(c => c.statusCode >= 400).length;
-  
+
   return {
     totalRequests: completedRequests.length,
     averageResponseTime: Math.round(totalDuration / completedRequests.length),
     slowRequests,
     errorRequests,
     activeRequests: contexts.filter(c => !c.endTime).length,
-    errorRate: ((errorRequests / completedRequests.length) * 100).toFixed(2)
+    errorRate: ((errorRequests / completedRequests.length) * 100).toFixed(2),
   };
 };
 

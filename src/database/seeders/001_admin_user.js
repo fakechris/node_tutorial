@@ -2,9 +2,9 @@
 const bcrypt = require('bcryptjs');
 
 module.exports = {
-  up: async (sequelize) => {
+  up: async sequelize => {
     const hashedPassword = await bcrypt.hash('admin123', 12);
-    
+
     await sequelize.bulkInsert('Users', [
       {
         username: 'admin',
@@ -15,14 +15,14 @@ module.exports = {
         role: 'admin',
         isActive: true,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     ]);
   },
 
-  down: async (sequelize) => {
+  down: async sequelize => {
     await sequelize.bulkDelete('Users', {
-      username: 'admin'
+      username: 'admin',
     });
-  }
+  },
 };

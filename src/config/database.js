@@ -10,7 +10,7 @@ const sequelize = new Sequelize({
     max: 10,
     min: 0,
     acquire: 30000,
-    idle: 10000
+    idle: 10000,
   },
   define: {
     // 自动添加时间戳
@@ -20,8 +20,8 @@ const sequelize = new Sequelize({
     // 使用下划线命名法
     underscored: true,
     // 表名不自动复数化
-    freezeTableName: true
-  }
+    freezeTableName: true,
+  },
 });
 
 // 测试数据库连接
@@ -29,17 +29,19 @@ const testConnection = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ 数据库连接成功！');
-    
+
     const dbInfo = {
       dialect: sequelize.getDialect(),
-      version: sequelize.getDatabaseVersion ? await sequelize.getDatabaseVersion() : 'Unknown',
+      version: sequelize.getDatabaseVersion
+        ? await sequelize.getDatabaseVersion()
+        : 'Unknown',
       config: {
         host: sequelize.config.host || 'local file',
         database: sequelize.config.database || sequelize.config.storage,
-        pool: sequelize.config.pool
-      }
+        pool: sequelize.config.pool,
+      },
     };
-    
+
     console.log('📊 数据库信息:', JSON.stringify(dbInfo, null, 2));
     return true;
   } catch (error) {
@@ -53,14 +55,14 @@ const syncDatabase = async (options = {}) => {
   try {
     const defaultOptions = {
       force: false, // 不强制重建表
-      alter: false  // 不自动修改表结构
+      alter: false, // 不自动修改表结构
     };
-    
+
     const syncOptions = { ...defaultOptions, ...options };
-    
+
     console.log('🔄 开始同步数据库模型...');
     await sequelize.sync(syncOptions);
-    
+
     if (syncOptions.force) {
       console.log('⚠️  数据库表已重建（所有数据已清空）');
     } else if (syncOptions.alter) {
@@ -68,7 +70,7 @@ const syncDatabase = async (options = {}) => {
     } else {
       console.log('✅ 数据库模型同步完成');
     }
-    
+
     return true;
   } catch (error) {
     console.error('❌ 数据库同步失败:', error.message);
@@ -91,21 +93,21 @@ const healthCheck = async () => {
   try {
     await sequelize.authenticate();
     const stats = await sequelize.query('SELECT 1 as health_check', {
-      type: Sequelize.QueryTypes.SELECT
+      type: Sequelize.QueryTypes.SELECT,
     });
-    
+
     return {
       status: 'healthy',
       connection: 'active',
       timestamp: new Date().toISOString(),
-      test_query: stats[0]?.health_check === 1
+      test_query: stats[0]?.health_check === 1,
     };
   } catch (error) {
     return {
       status: 'unhealthy',
       connection: 'failed',
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 };
@@ -115,7 +117,7 @@ const getStats = async () => {
   try {
     // 获取所有表名
     const tables = await sequelize.getQueryInterface().showAllTables();
-    
+
     const stats = {
       tables: tables.length,
       tableNames: tables,
@@ -123,17 +125,17 @@ const getStats = async () => {
       connections: {
         max: sequelize.options.pool.max,
         min: sequelize.options.pool.min,
-        active: sequelize.connectionManager.pool?.size || 0
+        active: sequelize.connectionManager.pool?.size || 0,
       },
       uptime: process.uptime(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    
+
     return stats;
   } catch (error) {
     return {
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 };
@@ -145,5 +147,5 @@ module.exports = {
   closeConnection,
   healthCheck,
   getStats,
-  Sequelize
+  Sequelize,
 };

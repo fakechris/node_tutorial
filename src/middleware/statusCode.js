@@ -8,7 +8,7 @@ const statusCode = {
         status: 'success',
         message,
         data,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -18,7 +18,7 @@ const statusCode = {
         status: 'success',
         message,
         data,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -28,14 +28,14 @@ const statusCode = {
         status: 'accepted',
         message,
         data,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
     // 204 No Content - 请求成功，但无内容返回
-    noContent: (res) => {
+    noContent: res => {
       return res.status(204).end();
-    }
+    },
   },
 
   // 客户端错误响应辅助函数
@@ -46,7 +46,7 @@ const statusCode = {
         status: 'error',
         message,
         ...(details && { details }),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -55,7 +55,7 @@ const statusCode = {
       return res.status(401).json({
         status: 'error',
         message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -64,7 +64,7 @@ const statusCode = {
       return res.status(403).json({
         status: 'error',
         message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -73,7 +73,7 @@ const statusCode = {
       return res.status(404).json({
         status: 'error',
         message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -84,7 +84,7 @@ const statusCode = {
         status: 'error',
         message: '请求方法不被允许',
         allowedMethods,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -94,7 +94,7 @@ const statusCode = {
         status: 'error',
         message: '不支持的内容类型',
         supportedTypes,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -103,7 +103,7 @@ const statusCode = {
       return res.status(409).json({
         status: 'error',
         message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -113,7 +113,7 @@ const statusCode = {
         status: 'error',
         message,
         errors,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -124,9 +124,9 @@ const statusCode = {
         status: 'error',
         message: '请求过于频繁，请稍后再试',
         retryAfter,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-    }
+    },
   },
 
   // 服务器错误响应辅助函数
@@ -136,11 +136,12 @@ const statusCode = {
       return res.status(500).json({
         status: 'error',
         message,
-        ...(process.env.NODE_ENV === 'development' && error && { 
-          stack: error.stack,
-          details: error.message 
-        }),
-        timestamp: new Date().toISOString()
+        ...(process.env.NODE_ENV === 'development' &&
+          error && {
+            stack: error.stack,
+            details: error.message,
+          }),
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -149,7 +150,7 @@ const statusCode = {
       return res.status(501).json({
         status: 'error',
         message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -158,7 +159,7 @@ const statusCode = {
       return res.status(502).json({
         status: 'error',
         message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     },
 
@@ -169,15 +170,15 @@ const statusCode = {
         status: 'error',
         message: '服务暂时不可用',
         retryAfter,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-    }
+    },
   },
 
   // 状态码检查中间件
   middleware: {
     // 检查方法是否被允许
-    checkMethodAllowed: (allowedMethods) => {
+    checkMethodAllowed: allowedMethods => {
       return (req, res, next) => {
         if (!allowedMethods.includes(req.method)) {
           return statusCode.clientError.methodNotAllowed(res, allowedMethods);
@@ -187,7 +188,7 @@ const statusCode = {
     },
 
     // 资源存在性检查
-    checkResourceExists: (resourceFinder) => {
+    checkResourceExists: resourceFinder => {
       return async (req, res, next) => {
         try {
           const resource = await resourceFinder(req);
@@ -206,9 +207,9 @@ const statusCode = {
     conditionalResponse: (req, res, next) => {
       // 保存原始的 json 方法
       const originalJson = res.json;
-      
+
       // 重写 json 方法以添加条件处理
-      res.json = function(data) {
+      res.json = function (data) {
         // 检查是否是空结果
         if (data && typeof data === 'object') {
           // 如果是列表且为空
@@ -220,14 +221,14 @@ const statusCode = {
             this.status(200); // 空列表仍然是成功的请求
           }
         }
-        
+
         // 调用原始方法
         return originalJson.call(this, data);
       };
-      
+
       next();
-    }
-  }
+    },
+  },
 };
 
 module.exports = statusCode;

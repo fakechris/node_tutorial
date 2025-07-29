@@ -19,7 +19,7 @@ const postController = {
         sortOrder = 'DESC',
         includeComments = false,
         includeAuthor = true,
-        includeCategory = true
+        includeCategory = true,
       } = req.query;
 
       // 构建查询条件
@@ -41,22 +41,29 @@ const postController = {
         whereConditions[Op.or] = [
           { title: { [Op.like]: `%${search}%` } },
           { content: { [Op.like]: `%${search}%` } },
-          { summary: { [Op.like]: `%${search}%` } }
+          { summary: { [Op.like]: `%${search}%` } },
         ];
       }
 
       if (tags) {
         const tagList = Array.isArray(tags) ? tags : tags.split(',');
         whereConditions.tags = {
-          [Op.overlap]: tagList
+          [Op.overlap]: tagList,
         };
       }
 
       // 验证排序字段
-      const validSortFields = ['createdAt', 'updatedAt', 'publishedAt', 'title', 'viewCount', 'likeCount'];
+      const validSortFields = [
+        'createdAt',
+        'updatedAt',
+        'publishedAt',
+        'title',
+        'viewCount',
+        'likeCount',
+      ];
       const actualSortBy = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
-      const actualSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) 
-        ? sortOrder.toUpperCase() 
+      const actualSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase())
+        ? sortOrder.toUpperCase()
         : 'DESC';
 
       // 分页参数
@@ -72,7 +79,7 @@ const postController = {
           model: User,
           as: 'author',
           attributes: ['id', 'username', 'firstName', 'lastName', 'email'],
-          required: false
+          required: false,
         });
       }
 
@@ -81,7 +88,7 @@ const postController = {
           model: Category,
           as: 'category',
           attributes: ['id', 'name', 'slug', 'color'],
-          required: false
+          required: false,
         });
       }
 
@@ -90,14 +97,16 @@ const postController = {
           model: Comment,
           as: 'comments',
           attributes: ['id', 'content', 'createdAt'],
-          include: [{
-            model: User,
-            as: 'author',
-            attributes: ['id', 'username']
-          }],
+          include: [
+            {
+              model: User,
+              as: 'author',
+              attributes: ['id', 'username'],
+            },
+          ],
           limit: 5,
           order: [['createdAt', 'DESC']],
-          required: false
+          required: false,
         });
       }
 
@@ -108,23 +117,26 @@ const postController = {
         offset: offset,
         order: [[actualSortBy, actualSortOrder]],
         include: include,
-        distinct: true
+        distinct: true,
       });
 
-      statusCode.success.ok(res, {
-        posts,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total: count,
-          totalPages: Math.ceil(count / limitNum),
-          hasNext: pageNum < Math.ceil(count / limitNum),
-          hasPrev: pageNum > 1
+      statusCode.success.ok(
+        res,
+        {
+          posts,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: count,
+            totalPages: Math.ceil(count / limitNum),
+            hasNext: pageNum < Math.ceil(count / limitNum),
+            hasPrev: pageNum > 1,
+          },
+          filters: { status, categoryId, authorId, search, tags },
+          sorting: { sortBy: actualSortBy, sortOrder: actualSortOrder },
         },
-        filters: { status, categoryId, authorId, search, tags },
-        sorting: { sortBy: actualSortBy, sortOrder: actualSortOrder }
-      }, '获取文章列表成功');
-
+        '获取文章列表成功'
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '获取文章列表失败', error);
     }
@@ -141,26 +153,28 @@ const postController = {
           {
             model: User,
             as: 'author',
-            attributes: ['id', 'username', 'firstName', 'lastName', 'email', 'bio']
+            attributes: ['id', 'username', 'firstName', 'lastName', 'email', 'bio'],
           },
           {
             model: Category,
             as: 'category',
-            attributes: ['id', 'name', 'slug', 'description', 'color']
+            attributes: ['id', 'name', 'slug', 'description', 'color'],
           },
           {
             model: Comment,
             as: 'comments',
-            include: [{
-              model: User,
-              as: 'author',
-              attributes: ['id', 'username', 'firstName', 'lastName']
-            }],
+            include: [
+              {
+                model: User,
+                as: 'author',
+                attributes: ['id', 'username', 'firstName', 'lastName'],
+              },
+            ],
             where: { isApproved: true },
             required: false,
-            order: [['createdAt', 'DESC']]
-          }
-        ]
+            order: [['createdAt', 'DESC']],
+          },
+        ],
       });
 
       if (!post) {
@@ -170,23 +184,25 @@ const postController = {
       // 检查访问权限
       if (post.status === 'draft' || post.status === 'private') {
         // 只有作者、管理员和版主可以查看草稿和私有文章
-        if (!req.user || (
-          req.user.userId !== post.authorId && 
-          !['admin', 'moderator'].includes(req.user.role)
-        )) {
+        if (
+          !req.user ||
+          (req.user.userId !== post.authorId &&
+            !['admin', 'moderator'].includes(req.user.role))
+        ) {
           return statusCode.clientError.notFound(res, '文章不存在');
         }
       }
 
       // 增加访问次数（如果不是作者本人且是公开文章）
-      if (incrementView === 'true' && 
-          post.status === 'published' && 
-          (!req.user || req.user.userId !== post.authorId)) {
+      if (
+        incrementView === 'true' &&
+        post.status === 'published' &&
+        (!req.user || req.user.userId !== post.authorId)
+      ) {
         await post.incrementViewCount();
       }
 
       statusCode.success.ok(res, post, '获取文章详情成功');
-
     } catch (error) {
       statusCode.serverError.internalError(res, '获取文章详情失败', error);
     }
@@ -203,7 +219,7 @@ const postController = {
         tags = [],
         status = 'draft',
         allowComments = true,
-        publishNow = false
+        publishNow = false,
       } = req.body;
 
       // 验证分类存在性
@@ -224,7 +240,7 @@ const postController = {
         tags: Array.isArray(tags) ? tags : [],
         status,
         allowComments,
-        publishedAt: (status === 'published' || publishNow) ? new Date() : null
+        publishedAt: status === 'published' || publishNow ? new Date() : null,
       };
 
       const newPost = await Post.create(postData);
@@ -241,22 +257,24 @@ const postController = {
           {
             model: User,
             as: 'author',
-            attributes: ['id', 'username', 'firstName', 'lastName']
+            attributes: ['id', 'username', 'firstName', 'lastName'],
           },
           {
             model: Category,
             as: 'category',
-            attributes: ['id', 'name', 'slug']
-          }
-        ]
+            attributes: ['id', 'name', 'slug'],
+          },
+        ],
       });
 
       statusCode.success.created(res, completePost, '文章创建成功');
-
     } catch (error) {
       if (error.name === 'SequelizeValidationError') {
         const validationErrors = error.errors.map(err => err.message);
-        return statusCode.clientError.badRequest(res, `数据验证失败: ${validationErrors.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `数据验证失败: ${validationErrors.join(', ')}`
+        );
       }
 
       statusCode.serverError.internalError(res, '创建文章失败', error);
@@ -275,7 +293,7 @@ const postController = {
         tags,
         status,
         allowComments,
-        publishNow = false
+        publishNow = false,
       } = req.body;
 
       const post = await Post.findByPk(id);
@@ -284,8 +302,10 @@ const postController = {
       }
 
       // 权限检查：只有作者、管理员和版主可以编辑
-      if (req.user.userId !== post.authorId && 
-          !['admin', 'moderator'].includes(req.user.role)) {
+      if (
+        req.user.userId !== post.authorId &&
+        !['admin', 'moderator'].includes(req.user.role)
+      ) {
         return statusCode.clientError.forbidden(res, '权限不足：只能编辑自己的文章');
       }
 
@@ -343,22 +363,24 @@ const postController = {
           {
             model: User,
             as: 'author',
-            attributes: ['id', 'username', 'firstName', 'lastName']
+            attributes: ['id', 'username', 'firstName', 'lastName'],
           },
           {
             model: Category,
             as: 'category',
-            attributes: ['id', 'name', 'slug']
-          }
-        ]
+            attributes: ['id', 'name', 'slug'],
+          },
+        ],
       });
 
       statusCode.success.ok(res, completePost, '文章更新成功');
-
     } catch (error) {
       if (error.name === 'SequelizeValidationError') {
         const validationErrors = error.errors.map(err => err.message);
-        return statusCode.clientError.badRequest(res, `数据验证失败: ${validationErrors.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `数据验证失败: ${validationErrors.join(', ')}`
+        );
       }
 
       statusCode.serverError.internalError(res, '更新文章失败', error);
@@ -377,8 +399,10 @@ const postController = {
       }
 
       // 权限检查：只有作者、管理员和版主可以删除
-      if (req.user.userId !== post.authorId && 
-          !['admin', 'moderator'].includes(req.user.role)) {
+      if (
+        req.user.userId !== post.authorId &&
+        !['admin', 'moderator'].includes(req.user.role)
+      ) {
         return statusCode.clientError.forbidden(res, '权限不足：只能删除自己的文章');
       }
 
@@ -397,7 +421,6 @@ const postController = {
         const category = await Category.findByPk(post.categoryId);
         if (category) await category.updatePostCount();
       }
-
     } catch (error) {
       statusCode.serverError.internalError(res, '删除文章失败', error);
     }
@@ -418,8 +441,10 @@ const postController = {
       }
 
       // 权限检查：只有作者、管理员和版主可以恢复
-      if (req.user.userId !== post.authorId && 
-          !['admin', 'moderator'].includes(req.user.role)) {
+      if (
+        req.user.userId !== post.authorId &&
+        !['admin', 'moderator'].includes(req.user.role)
+      ) {
         return statusCode.clientError.forbidden(res, '权限不足：只能恢复自己的文章');
       }
 
@@ -432,7 +457,6 @@ const postController = {
       }
 
       statusCode.success.ok(res, post, '文章恢复成功');
-
     } catch (error) {
       statusCode.serverError.internalError(res, '恢复文章失败', error);
     }
@@ -449,8 +473,10 @@ const postController = {
       }
 
       // 权限检查：只有作者、管理员和版主可以发布
-      if (req.user.userId !== post.authorId && 
-          !['admin', 'moderator'].includes(req.user.role)) {
+      if (
+        req.user.userId !== post.authorId &&
+        !['admin', 'moderator'].includes(req.user.role)
+      ) {
         return statusCode.clientError.forbidden(res, '权限不足：只能发布自己的文章');
       }
 
@@ -461,7 +487,6 @@ const postController = {
       await post.publish();
 
       statusCode.success.ok(res, post, '文章发布成功');
-
     } catch (error) {
       statusCode.serverError.internalError(res, '发布文章失败', error);
     }
@@ -478,8 +503,10 @@ const postController = {
       }
 
       // 权限检查：只有作者、管理员和版主可以取消发布
-      if (req.user.userId !== post.authorId && 
-          !['admin', 'moderator'].includes(req.user.role)) {
+      if (
+        req.user.userId !== post.authorId &&
+        !['admin', 'moderator'].includes(req.user.role)
+      ) {
         return statusCode.clientError.forbidden(res, '权限不足：只能操作自己的文章');
       }
 
@@ -490,7 +517,6 @@ const postController = {
       await post.unpublish();
 
       statusCode.success.ok(res, post, '文章已取消发布');
-
     } catch (error) {
       statusCode.serverError.internalError(res, '取消发布文章失败', error);
     }
@@ -512,10 +538,13 @@ const postController = {
 
       await post.incrementLikeCount();
 
-      statusCode.success.ok(res, {
-        likeCount: post.likeCount
-      }, '点赞成功');
-
+      statusCode.success.ok(
+        res,
+        {
+          likeCount: post.likeCount,
+        },
+        '点赞成功'
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '点赞失败', error);
     }
@@ -533,7 +562,6 @@ const postController = {
 
       const stats = await post.getStats();
       statusCode.success.ok(res, stats, '获取文章统计信息成功');
-
     } catch (error) {
       statusCode.serverError.internalError(res, '获取文章统计信息失败', error);
     }
@@ -548,9 +576,18 @@ const postController = {
         return statusCode.clientError.badRequest(res, '操作类型和文章ID列表不能为空');
       }
 
-      const validOperations = ['publish', 'unpublish', 'delete', 'changeCategory', 'changeStatus'];
+      const validOperations = [
+        'publish',
+        'unpublish',
+        'delete',
+        'changeCategory',
+        'changeStatus',
+      ];
       if (!validOperations.includes(operation)) {
-        return statusCode.clientError.badRequest(res, `操作类型必须是以下之一: ${validOperations.join(', ')}`);
+        return statusCode.clientError.badRequest(
+          res,
+          `操作类型必须是以下之一: ${validOperations.join(', ')}`
+        );
       }
 
       const results = [];
@@ -564,8 +601,10 @@ const postController = {
           }
 
           // 权限检查
-          if (req.user.userId !== post.authorId && 
-              !['admin', 'moderator'].includes(req.user.role)) {
+          if (
+            req.user.userId !== post.authorId &&
+            !['admin', 'moderator'].includes(req.user.role)
+          ) {
             results.push({ postId, success: false, message: '权限不足' });
             continue;
           }
@@ -626,20 +665,23 @@ const postController = {
       const successCount = results.filter(r => r.success).length;
       const failCount = results.length - successCount;
 
-      statusCode.success.ok(res, {
-        operation,
-        results,
-        summary: {
-          total: results.length,
-          success: successCount,
-          failed: failCount
-        }
-      }, `批量操作完成：成功 ${successCount} 个，失败 ${failCount} 个`);
-
+      statusCode.success.ok(
+        res,
+        {
+          operation,
+          results,
+          summary: {
+            total: results.length,
+            success: successCount,
+            failed: failCount,
+          },
+        },
+        `批量操作完成：成功 ${successCount} 个，失败 ${failCount} 个`
+      );
     } catch (error) {
       statusCode.serverError.internalError(res, '批量操作失败', error);
     }
-  }
+  },
 };
 
 module.exports = postController;

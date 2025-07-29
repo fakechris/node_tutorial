@@ -1,0 +1,73 @@
+# 依赖目录
+node_modules/
+
+# 构建输出
+dist/
+build/
+coverage/
+
+# 日志文件
+logs/
+*.log
+
+# 数据库文件
+*.sqlite
+*.sqlite3
+*.db
+
+# 环境文件
+.env*
+
+# 二进制文件
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.svg
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# 压缩文件
+*.min.js
+*.min.css
+
+# 自动生成的文件
+package-lock.json
+yarn.lock
+
+# 文档生成
+docs/api/
+
+# 模板文件
+templates/
+
+# 配置文件
+.gitignore
+.eslintignore
+.dockerignore
+
+# 许可证文件
+LICENSE
+LICENSE.md
+
+# 变更日志
+CHANGELOG.md
+
+# 特定格式的代码块（在 markdown 中）
+*.md
+
+# Docker 相关
+Dockerfile*
+docker-compose*.yml
+
+# CI/CD 配置
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# 部署脚本
+scripts/deploy.sh
+scripts/setup-server.sh
