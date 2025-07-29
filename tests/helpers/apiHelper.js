@@ -21,9 +21,10 @@ class ApiHelper {
 
   // 注册用户并获取 token
   async registerAndLogin(userData = {}) {
+    const uniqueId = Math.random().toString(36).substring(2, 15); // 生成12位随机字符串
     const defaultUserData = {
-      username: `testuser_${Date.now()}`,
-      email: `test_${Date.now()}@example.com`,
+      username: `user${uniqueId}`, // 保持在20字符限制内
+      email: `test${uniqueId}@example.com`,
       password: 'TestPassword123!',
       ...userData
     };
@@ -43,8 +44,8 @@ class ApiHelper {
       })
       .expect(200);
 
-    const token = loginResponse.body.token;
-    const user = loginResponse.body.user;
+    const token = loginResponse.body.data.token;
+    const user = loginResponse.body.data.user;
 
     // 缓存 token
     this.authTokens.set(user.id, token);
