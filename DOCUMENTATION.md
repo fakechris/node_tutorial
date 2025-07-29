@@ -79,6 +79,10 @@ back_tutor/
 │   ├── stage-05.md              # 阶段五：认证权限
 │   ├── stage-06.md              # 阶段六：数据库集成
 │   └── stage-07.md              # 阶段七：调试日志
+├── docs/                         # 项目文档目录
+│   └── conversations/            # 开发对话记录
+│       ├── README.md             # 对话记录说明
+│       └── conversations-*.md    # 完整开发对话
 ├── logs/                         # 日志文件目录
 ├── database/                     # 数据库文件
 ├── .env.development             # 开发环境配置
@@ -89,6 +93,7 @@ back_tutor/
 ├── test-stage7.sh               # 监控测试脚本
 ├── API.md                       # API文档
 ├── DOCUMENTATION.md             # 项目文档
+├── DEVELOPMENT_LOG.md           # 开发历程日志
 └── README.md                    # 项目说明
 ```
 
