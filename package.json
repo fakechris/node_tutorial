@@ -4,9 +4,17 @@
   "description": "Node.js后端开发实战教程",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "echo \"暂无测试\" && exit 1"
+    "start": "NODE_ENV=production node src/index.js",
+    "start:dev": "NODE_ENV=development node src/index.js", 
+    "dev": "NODE_ENV=development nodemon src/index.js",
+    "test": "NODE_ENV=test node src/index.js",
+    "test:comprehensive": "./test-comprehensive.sh",
+    "test:database": "./test-database.sh",
+    "test:stage7": "./test-stage7.sh",
+    "prod": "NODE_ENV=production node src/index.js",
+    "build": "echo \"No build step required for Node.js\" && exit 0",
+    "lint": "echo \"Linting not configured\" && exit 0",
+    "validate": "node -c src/index.js && echo \"✅ Syntax validation passed\""
   },
   "keywords": [
     "nodejs",

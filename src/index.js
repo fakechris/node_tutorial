@@ -1,8 +1,10 @@
-// 阶段七：调试和日志系统整合
-// 加载环境变量
-require('dotenv').config();
+// 阶段八：生产级Node.js后端服务
+// 初始化环境配置
+const { initializeConfig } = require('./config/environment');
+const config = initializeConfig();
 
 const express = require('express');
+const compression = require('compression');
 const app = express();
 
 // 导入系统级组件
@@ -16,7 +18,7 @@ const validateRequest = require('./middleware/requestValidator');
 const cors = require('./middleware/cors');
 const headers = require('./middleware/headers');
 
-// 🔧 中间件顺序至关重要！
+// 🔧 生产级中间件配置（顺序至关重要！）
 
 // 1. 请求跟踪（最早，用于生成traceId）
 app.use(requestTracker);
@@ -24,24 +26,46 @@ app.use(requestTracker);
 // 2. 性能监控（紧随其后，监控整个请求周期）
 app.use(performanceMonitor);
 
-// 3. CORS中间件
-app.use(cors());
+// 3. 生产环境启用压缩
+if (config.server.compression) {
+  app.use(compression({
+    filter: (req, res) => {
+      if (req.headers['x-no-compression']) {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+    level: 6,
+    threshold: 1024
+  }));
+}
 
-// 4. 安全头部中间件
+// 4. CORS中间件（使用环境配置）
+app.use(cors({
+  origin: config.security.cors.origin,
+  methods: config.security.cors.methods,
+  allowedHeaders: config.security.cors.allowedHeaders,
+  credentials: true
+}));
+
+// 5. 安全头部中间件
 app.use(headers.security);
 
-// 5. 请求追踪头部
+// 6. 请求追踪头部
 app.use(headers.requestTracking);
 
-// 6. 基础解析中间件
+// 7. 基础解析中间件（使用配置限制）
 app.use(express.json({ 
-  limit: '10mb',
+  limit: config.server.bodyLimit,
   verify: (req, res, buf) => {
     // 添加原始body用于某些特殊场景
     req.rawBody = buf;
   }
 }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: config.server.bodyLimit 
+}));
 
 // 健康检查路由
 app.get('/health', (req, res) => {
@@ -139,25 +163,37 @@ app.use('*', notFoundHandler);
 // 全局错误处理中间件（必须放在最后）
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
+// 生产级服务器启动配置
+const server = app.listen(config.server.port, config.server.host, () => {
   logger.info('Server started successfully', {
-    port: PORT,
-    environment: process.env.NODE_ENV || 'development',
-    baseUrl: `http://localhost:${PORT}`,
-    debugEnabled: process.env.NODE_ENV !== 'production',
+    port: config.server.port,
+    host: config.server.host,
+    environment: config.env,
+    baseUrl: `http://${config.server.host}:${config.server.port}`,
+    compression: config.server.compression,
+    monitoring: config.monitoring.enabled,
+    debugEnabled: config.features.debugPanel,
     startTime: new Date().toISOString()
   });
   
-  console.log(`🚀 服务器启动成功！`);
-  console.log(`📍 本地地址: http://localhost:${PORT}`);
-  console.log(`🌍 环境模式: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🚀 Node.js后端服务启动成功！`);
+  console.log(`📍 服务地址: http://${config.server.host}:${config.server.port}`);
+  console.log(`🌍 运行环境: ${config.env}`);
+  console.log(`📊 压缩功能: ${config.server.compression ? '启用' : '禁用'}`);
+  console.log(`🔍 监控功能: ${config.monitoring.enabled ? '启用' : '禁用'}`);
   console.log(`⏰ 启动时间: ${new Date().toLocaleString('zh-CN')}`);
   
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`🔍 调试面板: http://localhost:${PORT}/api/debug/dashboard`);
+  if (config.features.debugPanel) {
+    console.log(`🔍 调试面板: http://${config.server.host}:${config.server.port}/api/debug/dashboard`);
+  }
+  
+  if (config.isProduction) {
+    console.log(`🔒 生产模式：调试功能已禁用，安全策略已启用`);
   }
 });
+
+// 设置服务器超时
+server.timeout = config.server.timeout;
 
 // 优雅关闭
 process.on('SIGTERM', () => {
