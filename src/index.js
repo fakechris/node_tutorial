@@ -1,31 +1,46 @@
-// 阶段二：中间件开发与实践
+// 阶段七：调试和日志系统整合
 // 加载环境变量
 require('dotenv').config();
 
 const express = require('express');
 const app = express();
 
-// 导入自定义中间件
-const logger = require('./middleware/logger');
-const errorHandler = require('./middleware/errorHandler');
+// 导入系统级组件
+const logger = require('./config/logger');
+
+// 导入中间件
+const requestTracker = require('./middleware/requestTracker');
+const { performanceMonitor } = require('./middleware/performanceMonitor');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const validateRequest = require('./middleware/requestValidator');
 const cors = require('./middleware/cors');
 const headers = require('./middleware/headers');
 
-// 1. CORS中间件（必须在其他中间件之前）
+// 🔧 中间件顺序至关重要！
+
+// 1. 请求跟踪（最早，用于生成traceId）
+app.use(requestTracker);
+
+// 2. 性能监控（紧随其后，监控整个请求周期）
+app.use(performanceMonitor);
+
+// 3. CORS中间件
 app.use(cors());
 
-// 2. 安全头部中间件
+// 4. 安全头部中间件
 app.use(headers.security);
 
-// 3. 请求追踪中间件
+// 5. 请求追踪头部
 app.use(headers.requestTracking);
 
-// 4. 日志中间件
-app.use(logger);
-
-// 5. 基础解析中间件
-app.use(express.json({ limit: '10mb' }));
+// 6. 基础解析中间件
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    // 添加原始body用于某些特殊场景
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // 健康检查路由
@@ -49,7 +64,8 @@ app.get('/', (req, res) => {
   res.json({
     message: '欢迎来到Node.js后端开发教程',
     version: '1.0.0',
-    stage: '阶段六：数据库ORM与CRUD操作',
+    stage: '阶段七：调试和日志系统',
+    monitoring: '实时监控和调试工具',
     features: {
       middleware: '中间件系统',
       routing: 'RESTful路由设计',
@@ -65,12 +81,19 @@ app.get('/', (req, res) => {
       authorization: '基于角色的权限控制',
       passwordSecurity: '密码加密存储',
       database: 'Sequelize ORM集成',
-      dataModeling: '数据模型和关联关系'
+      dataModeling: '数据模型和关联关系',
+      logging: 'Winston日志系统',
+      requestTracking: '请求追踪和关联ID',
+      performanceMonitoring: '性能监控和指标收集',
+      errorMonitoring: '错误监控和统计',
+      debugDashboard: '实时调试面板'
     },
     apiEndpoint: '/api',
     authEndpoint: '/api/auth',
     demoEndpoint: '/api/demo',
     databaseEndpoint: '/api/db',
+    debugEndpoint: '/api/debug',
+    debugDashboard: '/api/debug/dashboard',
     documentation: 'https://github.com/back-tutor/node-backend-tutorial'
   });
 });
@@ -110,30 +133,50 @@ app.get('/api/test/async-error', async (req, res, next) => {
   }
 });
 
-// 404处理
-app.use('*', (req, res) => {
-  res.status(404).json({
-    status: 'error',
-    message: `路由 ${req.originalUrl} 未找到`,
-    timestamp: new Date().toISOString()
-  });
-});
+// 404处理（使用增强版处理器）
+app.use('*', notFoundHandler);
 
 // 全局错误处理中间件（必须放在最后）
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
+  logger.info('Server started successfully', {
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development',
+    baseUrl: `http://localhost:${PORT}`,
+    debugEnabled: process.env.NODE_ENV !== 'production',
+    startTime: new Date().toISOString()
+  });
+  
   console.log(`🚀 服务器启动成功！`);
   console.log(`📍 本地地址: http://localhost:${PORT}`);
   console.log(`🌍 环境模式: ${process.env.NODE_ENV || 'development'}`);
   console.log(`⏰ 启动时间: ${new Date().toLocaleString('zh-CN')}`);
+  
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`🔍 调试面板: http://localhost:${PORT}/api/debug/dashboard`);
+  }
 });
 
 // 优雅关闭
 process.on('SIGTERM', () => {
+  logger.info('Received SIGTERM signal, shutting down gracefully');
   console.log('💤 收到SIGTERM信号，准备关闭服务器...');
+  
   server.close(() => {
+    logger.info('Server closed successfully');
+    console.log('✅ 服务器已安全关闭');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  logger.info('Received SIGINT signal, shutting down gracefully');
+  console.log('💤 收到SIGINT信号，准备关闭服务器...');
+  
+  server.close(() => {
+    logger.info('Server closed successfully');
     console.log('✅ 服务器已安全关闭');
     process.exit(0);
   });

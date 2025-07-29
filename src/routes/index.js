@@ -9,6 +9,7 @@ const demoRouter = require('./demo');
 const authRouter = require('./auth');
 const databaseRouter = require('./database');
 const categoriesRouter = require('./categories');
+const debugRouter = require('./debug');
 
 // API信息路由
 router.get('/', (req, res) => {
@@ -16,7 +17,7 @@ router.get('/', (req, res) => {
     status: 'success',
     message: 'Node.js后端开发教程 - API接口',
     version: '1.0.0',
-    stage: '阶段六：数据库ORM与CRUD操作',
+    stage: '阶段七：调试和日志系统',
     endpoints: {
       users: {
         'GET /api/users': '获取用户列表（支持分页、过滤、搜索）',
@@ -71,6 +72,18 @@ router.get('/', (req, res) => {
         'PUT /api/categories/:id': '更新分类（管理员/版主）',
         'DELETE /api/categories/:id': '删除分类（管理员）',
         'POST /api/categories/batch': '批量操作分类（管理员/版主）'
+      },
+      debug: {
+        'GET /api/debug/health': '系统健康检查（公开）',
+        'GET /api/debug/overview': '系统概览（需认证）',
+        'GET /api/debug/performance': '性能指标（需认证）',
+        'GET /api/debug/requests': '活跃请求监控（需认证）',
+        'GET /api/debug/requests/:traceId': '请求详情（需认证）',
+        'GET /api/debug/errors': '错误统计（需认证）',
+        'GET /api/debug/logs': '日志查看（需认证）',
+        'GET /api/debug/config': '系统配置（需认证）',
+        'POST /api/debug/reset': '重置统计（需认证）',
+        'GET /api/debug/dashboard': '调试面板（开发环境）'
       }
     },
     features: {
@@ -92,7 +105,13 @@ router.get('/', (req, res) => {
       database: 'Sequelize ORM集成',
       dataModeling: '数据模型和关联关系',
       migrations: '数据库同步和迁移',
-      validation: '数据验证和约束'
+      validation: '数据验证和约束',
+      logging: 'Winston统一日志系统',
+      requestTracking: '请求跟踪和关联ID',
+      performanceMonitoring: '实时性能监控',
+      errorMonitoring: '错误监控和统计',
+      debugTools: '调试工具和开发辅助',
+      healthChecks: '系统健康检查'
     },
     documentation: 'https://github.com/back-tutor/node-backend-tutorial',
     timestamp: new Date().toISOString()
@@ -122,5 +141,6 @@ router.use('/demo', demoRouter);
 router.use('/auth', authRouter);
 router.use('/db', databaseRouter);
 router.use('/categories', categoriesRouter);
+router.use('/debug', debugRouter);
 
 module.exports = router;
