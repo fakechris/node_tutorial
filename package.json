@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "NODE_ENV=production node src/index.js",
-    "start:dev": "NODE_ENV=development node src/index.js", 
+    "start:dev": "NODE_ENV=development node src/index.js",
     "dev": "NODE_ENV=development nodemon src/index.js",
     "test": "NODE_ENV=test node src/index.js",
     "test:comprehensive": "./test-comprehensive.sh",
@@ -14,7 +14,16 @@
     "prod": "NODE_ENV=production node src/index.js",
     "build": "echo \"No build step required for Node.js\" && exit 0",
     "lint": "echo \"Linting not configured\" && exit 0",
-    "validate": "node -c src/index.js && echo \"✅ Syntax validation passed\""
+    "validate": "node -c src/index.js && echo \"✅ Syntax validation passed\"",
+    "migrate": "node bin/migrate.js",
+    "migrate:up": "node bin/migrate.js migrate:up",
+    "migrate:down": "node bin/migrate.js migrate:down",
+    "migrate:status": "node bin/migrate.js migrate:status",
+    "seed": "node bin/migrate.js seed:up",
+    "seed:down": "node bin/migrate.js seed:down",
+    "seed:status": "node bin/migrate.js seed:status",
+    "db:setup": "node bin/migrate.js db:setup",
+    "db:reset": "node bin/migrate.js db:reset --force"
   },
   "keywords": [
     "nodejs",
@@ -26,6 +35,7 @@
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^3.0.2",
+    "commander": "^14.0.0",
     "compression": "^1.8.1",
     "dotenv": "^17.2.1",
     "express": "^4.19.2",
