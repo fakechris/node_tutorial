@@ -256,10 +256,12 @@ describe('User Workflow E2E Tests', () => {
       // 创建多个分类
       const categories = [];
       for (let i = 1; i <= 3; i++) {
-        const categoryResponse = await apiHelper.post('/api/categories', {
-          name: `Category ${i}`,
+        const categoryData = {
+          name: `Category${i}`, // 移除空格，确保兼容性
+          slug: `category${i}`, // 提供slug以避免自动生成问题
           description: `Description for category ${i}`
-        }, { token: adminToken });
+        };
+        const categoryResponse = await apiHelper.post('/api/categories', categoryData, { token: adminToken });
         apiHelper.expectSuccessResponse(categoryResponse, 201);
         categories.push(categoryResponse.body.data);
       }
