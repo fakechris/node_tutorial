@@ -203,7 +203,11 @@ describe('User Model', () => {
     });
 
     it('should not allow updating sensitive fields via updateProfile', async () => {
-      const originalPassword = user.password;
+      const { User } = testDatabase.getModels();
+      
+      // 获取包含密码的用户实例以便比较
+      const userWithPassword = await User.scope('withPassword').findByPk(user.id);
+      const originalPassword = userWithPassword.password;
       const originalEmail = user.email;
 
       const updateData = {
@@ -213,9 +217,12 @@ describe('User Model', () => {
       };
 
       await user.updateProfile(updateData);
+      
+      // 重新加载包含密码的用户以验证密码未被更改
+      await userWithPassword.reload();
       await user.reload();
 
-      expect(user.password).toBe(originalPassword);
+      expect(userWithPassword.password).toBe(originalPassword);
       expect(user.email).toBe(originalEmail);
       expect(user.id).not.toBe(999);
     });

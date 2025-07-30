@@ -18,8 +18,8 @@ const authController = {
         role = 'user',
       } = req.body;
 
-      // 检查用户名和邮箱是否已存在
-      const existingUser = await User.findOne({
+      // 检查用户名和邮箱是否已存在  
+      const existingUser = await User.scope('withPassword').findOne({
         where: {
           [Op.or]: [{ username }, { email }],
         },
@@ -112,11 +112,7 @@ const authController = {
       const { username, password } = req.body;
 
       // 查找用户（支持用户名或邮箱登录）
-      const user = await User.findOne({
-        where: {
-          [Op.or]: [{ username }, { email: username }],
-        },
-      });
+      const user = await User.findByUsernameOrEmail(username);
 
       if (!user) {
         return statusCode.clientError.unauthorized(res, '用户名或密码错误');
@@ -207,14 +203,14 @@ const authController = {
         req.body;
       const userId = req.user.userId;
 
-      const user = await User.findByPk(userId);
+      const user = await User.scope('withPassword').findByPk(userId);
       if (!user) {
         return statusCode.clientError.notFound(res, '用户不存在');
       }
 
       // 如果要更新用户名或邮箱，检查唯一性
       if (username || email) {
-        const existingUser = await User.findOne({
+        const existingUser = await User.scope('withPassword').findOne({
           where: {
             [Op.and]: [
               { id: { [Op.ne]: userId } },

@@ -58,7 +58,7 @@ class TestDatabase {
       await Comment.destroy({ where: {}, force: true });
       await Post.destroy({ where: {}, force: true });
       await Category.destroy({ where: {}, force: true });
-      await User.destroy({ where: {}, force: true });
+      await User.unscoped().destroy({ where: {}, force: true });
       
       console.log('🧹 Test database cleaned');
     } catch (error) {
@@ -78,9 +78,10 @@ class TestDatabase {
   // 创建测试用户
   async createTestUser(userData = {}) {
     const { User } = this.models;
+    const uniqueId = Math.random().toString(36).substring(2, 15); // 生成字母数字ID
     const defaultData = {
-      username: `testuser_${Date.now()}`,
-      email: `test_${Date.now()}@example.com`,
+      username: `testuser${uniqueId}`, // 移除下划线，符合alphanumeric要求
+      email: `test${uniqueId}@example.com`,
       password: 'TestPassword123!',
       ...userData
     };
@@ -91,8 +92,10 @@ class TestDatabase {
   // 创建测试分类
   async createTestCategory(categoryData = {}) {
     const { Category } = this.models;
+    const uniqueId = Math.random().toString(36).substring(2, 15);
     const defaultData = {
-      name: `Test Category ${Date.now()}`,
+      name: `TestCategory${uniqueId}`,
+      slug: `testcategory${uniqueId}`, // 提供slug避免null错误
       description: 'Test category description',
       ...categoryData
     };

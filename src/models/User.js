@@ -111,6 +111,17 @@ const User = sequelize.define(
   },
   {
     tableName: 'users',
+    defaultScope: {
+      attributes: { exclude: ['password'] }
+    },
+    scopes: {
+      active: {
+        where: { isActive: true }
+      },
+      withPassword: {
+        attributes: { include: ['password'] }
+      }
+    },
     indexes: [
       {
         unique: true,
@@ -170,35 +181,65 @@ User.prototype.getPublicInfo = function () {
   return userData;
 };
 
+// 实例方法：获取用户档案（别名）
+User.prototype.getProfile = function () {
+  return this.getPublicInfo();
+};
+
 // 实例方法：更新最后登录时间
 User.prototype.updateLastLogin = async function () {
   this.lastLoginAt = new Date();
   await this.save();
 };
 
+// 实例方法：安全更新用户档案（不允许更新敏感字段）
+User.prototype.updateProfile = async function (updateData) {
+  const allowedFields = ['bio', 'firstName', 'lastName', 'avatarUrl'];
+  const filteredData = {};
+  
+  // 只允许更新指定字段
+  allowedFields.forEach(field => {
+    if (updateData.hasOwnProperty(field)) {
+      filteredData[field] = updateData[field];
+    }
+  });
+  
+  return await this.update(filteredData);
+};
+
 // 类方法：按角色查找用户
 User.findByRole = function (role) {
   return this.findAll({
     where: { role },
-    attributes: { exclude: ['password'] },
   });
 };
 
 // 类方法：查找活跃用户
 User.findActiveUsers = function () {
-  return this.findAll({
-    where: { isActive: true },
-    attributes: { exclude: ['password'] },
-  });
+  return this.scope('active').findAll();
 };
 
-// 类方法：按用户名或邮箱查找
+// 类方法：按用户名或邮箱查找（包含密码，用于登录验证）
 User.findByUsernameOrEmail = function (identifier) {
   const { Op } = require('sequelize');
-  return this.findOne({
+  return this.scope('withPassword').findOne({
     where: {
       [Op.or]: [{ username: identifier }, { email: identifier }],
     },
+  });
+};
+
+// 类方法：按用户名查找
+User.findByUsername = function (username) {
+  return this.findOne({
+    where: { username },
+  });
+};
+
+// 类方法：按邮箱查找
+User.findByEmail = function (email) {
+  return this.findOne({
+    where: { email },
   });
 };
 
